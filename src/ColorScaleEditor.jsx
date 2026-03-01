@@ -2489,7 +2489,7 @@ export default function ColorScaleEditor() {
             <div className={`prose prose-lg max-w-none ${
               theme === 'light'
                 ? 'prose-neutral prose-headings:text-neutral-1100 prose-p:text-neutral-900 prose-li:text-neutral-900 prose-strong:text-neutral-1100'
-                : 'prose-invert prose-headings:text-white prose-p:text-gray-300 prose-li:text-gray-300 prose-strong:text-white'
+                : 'prose-invert prose-headings:text-warm-gray-200 prose-p:text-gray-400 prose-li:text-gray-400 prose-strong:text-warm-gray-200'
             }`}>
               <ReactMarkdown>
                 {howToUseMarkdown}
