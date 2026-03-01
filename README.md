@@ -2,7 +2,7 @@
 
 An interactive bezier curve editor for creating perceptually uniform color scales using LAB color space.
 
-[App link](primitivecolorbuilder.netlify.app)
+[App link](http://primitivecolorbuilder.netlify.app)
 
 ## Features
 
