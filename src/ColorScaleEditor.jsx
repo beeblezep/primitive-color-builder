@@ -1270,6 +1270,21 @@ export default function ColorScaleEditor() {
       ? colorScales.find(cs => cs.id === baseColorScaleId)
       : colorScales[0];
 
+    if (!baseScale) {
+      alert('Please create a color scale first');
+      setIsGenerating(false);
+      return;
+    }
+
+    // Check if base color has sufficient saturation
+    const baseRgb = hexToRgb(baseScale.hex);
+    const baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+    if (baseHsl.s < 0.05) {
+      alert('The selected base color has very low saturation (appears gray). Please select a more saturated color as your base.');
+      setIsGenerating(false);
+      return;
+    }
+
     for (const family of selectedFamilies) {
       const targetHue = colorFamilyHues[family];
       const familyOptions = [];
@@ -1405,6 +1420,13 @@ export default function ColorScaleEditor() {
 
     const baseRgb = hexToRgb(baseScale.hex);
     const baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+
+    // Check if base color has sufficient saturation
+    if (baseHsl.s < 0.05) {
+      alert('The selected base color has very low saturation (appears gray). Please select a more saturated color as your base.');
+      setIsGenerating(false);
+      return;
+    }
 
     const colorsByFamily = {};
 
@@ -2297,10 +2319,19 @@ export default function ColorScaleEditor() {
     });
   }, [colorScales]);
 
-  // Set default base color scale to first color scale
+  // Set default base color scale to first color scale with sufficient saturation
   useEffect(() => {
     if (colorScales.length > 0 && baseColorScaleId === null) {
-      setBaseColorScaleId(colorScales[0].id);
+      // Find the first color scale with saturation >= 5% to avoid gray colors
+      const saturatedScale = colorScales.find(cs => {
+        const rgb = hexToRgb(cs.hex);
+        const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+        return hsl.s >= 0.05;
+      });
+
+      if (saturatedScale) {
+        setBaseColorScaleId(saturatedScale.id);
+      }
     }
   }, [colorScales, baseColorScaleId]);
 
