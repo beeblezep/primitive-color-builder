@@ -1,4 +1,4 @@
-# Color Scale Editor
+# Primitive Color Builder
 
 An interactive bezier curve editor for creating perceptually uniform color scales using LAB color space.
 
