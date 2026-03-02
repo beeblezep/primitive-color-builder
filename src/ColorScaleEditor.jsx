@@ -20,6 +20,7 @@ export default function ColorScaleEditor() {
       gamut: 'srgb', // Color space: 'srgb' or 'p3'
       isGrayScale: true,
       isExpanded: false,
+      expandedInMinimalView: false, // Track inline expansion in minimal view
       lightSurface: false,
       useCustomBezier: false,
       useCustomLstarRange: false,
@@ -83,6 +84,62 @@ export default function ColorScaleEditor() {
     const supported = CSS.supports('color', 'color(display-p3 1 0 0)');
     setSupportsP3(supported);
   }, []);
+
+  // Click-outside detection for minimal view expansion
+  useEffect(() => {
+    if (viewMode !== 'simple') return;
+
+    const hasExpanded = colorScales.some(cs => cs.expandedInMinimalView);
+    if (!hasExpanded) return;
+
+    const handleClickOutside = (e) => {
+      // Check if click is outside all scale cards
+      const clickedCard = e.target.closest('.cardboard-panel');
+      // Don't collapse if clicking on interactive elements (buttons, inputs, etc.)
+      const isInteractiveElement = e.target.closest('button, input, select, textarea, a, [role="button"]');
+
+      if (!clickedCard && !isInteractiveElement) {
+        // Collapse all
+        setColorScales(colorScales.map(cs => ({
+          ...cs,
+          expandedInMinimalView: false
+        })));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [viewMode, colorScales]);
+
+  // Escape key handler for minimal view expansion
+  useEffect(() => {
+    if (viewMode !== 'simple') return;
+
+    const hasExpanded = colorScales.some(cs => cs.expandedInMinimalView);
+    if (!hasExpanded) return;
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setColorScales(colorScales.map(cs => ({
+          ...cs,
+          expandedInMinimalView: false
+        })));
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [viewMode, colorScales]);
+
+  // Auto-collapse on view mode change
+  useEffect(() => {
+    if (viewMode === 'default') {
+      setColorScales(colorScales.map(cs => ({
+        ...cs,
+        expandedInMinimalView: false
+      })));
+    }
+  }, [viewMode]);
 
   const [contrastCheck, setContrastCheck] = useState('off'); // Contrast check: 'off', 'aa', or 'apca'
   const [contrastColor1, setContrastColor1] = useState('#ffffff'); // First custom contrast test color (default white)
@@ -1756,6 +1813,7 @@ export default function ColorScaleEditor() {
       hex: hex,
       gamut: 'srgb',
       isExpanded: false,
+      expandedInMinimalView: false,
       lightSurface: false,
       useCustomBezier: false,
       useCustomLstarRange: false,
@@ -1933,6 +1991,13 @@ export default function ColorScaleEditor() {
     setColorScales(colorScales.map(cs =>
       cs.id === id ? { ...cs, isExpanded: !cs.isExpanded } : cs
     ));
+  };
+
+  const toggleMinimalViewExpansion = (id) => {
+    setColorScales(colorScales.map(cs => ({
+      ...cs,
+      expandedInMinimalView: cs.id === id ? !cs.expandedInMinimalView : false
+    })));
   };
 
   const updateColorScaleBezier = (id, point, axis, value) => {
@@ -3310,7 +3375,7 @@ export default function ColorScaleEditor() {
           return (
             <motion.div
               key={cs.id}
-              layout
+              layout={viewMode === 'default'}
               initial={{ opacity: 0, y: -20 }}
               animate={{
                 opacity: 1,
@@ -3329,17 +3394,27 @@ export default function ColorScaleEditor() {
               }}
               transition={{
                 layout: {
-                  duration: 0.3,
-                  ease: [0.4, 0, 0.2, 1]
+                  type: "tween",
+                  duration: 0.15,
+                  ease: "linear"
                 }
               }}
-              className={`cardboard-panel rounded-xl mb-3 ${theme === 'light' ? 'bg-white border border-gray-200' : 'bg-black border border-zinc-800'}`}
+              onClick={viewMode === 'simple' ? () => toggleMinimalViewExpansion(cs.id) : undefined}
+              className={`cardboard-panel rounded-xl mb-3 ${theme === 'light' ? 'bg-white border border-gray-200' : 'bg-black border border-zinc-800'} ${viewMode === 'simple' ? 'cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all' : ''}`}
             >
               {/* Always visible compact header */}
               <div className="p-4">
                 {/* Token Prefix and Key Color - Compact */}
-                {viewMode === 'default' && (
-                <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                <AnimatePresence>
+                {(viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="mb-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {/* Token/Key row - responsive layout */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     {/* Left controls - wrap on all screens */}
@@ -3612,11 +3687,12 @@ export default function ColorScaleEditor() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
                 )}
+                </AnimatePresence>
 
                 {/* Advanced Controls - Below Token/Key row, Above swatch scale */}
-                {viewMode === 'default' && !cs.isSingleColor && (
+                {(viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && !cs.isSingleColor && (
                   <div
                     className="overflow-hidden px-4"
                     onClick={(e) => e.stopPropagation()}
@@ -3952,7 +4028,7 @@ export default function ColorScaleEditor() {
                           })()}
                           </AnimatePresence>
                         </div>
-                        {viewMode === 'default' && (
+                        {(viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
                         <div className={`text-center text-xs font-dm-mono italic leading-tight ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
                           <div>{cs.hex.slice(1)}</div>
                           <div className="font-mono not-italic">L* {parseFloat(cs.lstar).toFixed(1)}</div>
@@ -3977,7 +4053,7 @@ export default function ColorScaleEditor() {
                                   border: showSwatchBorders ? '0.5px solid rgba(128, 128, 128, 0.5)' : 'none'
                                 }}
                               >
-                                {isKeyColor && viewMode === 'default' && (
+                                {isKeyColor && (viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
                                   <span
                                     className={`material-symbols-rounded absolute bottom-1 left-1/2 -translate-x-1/2 text-[14px] ${textColor}`}
                                     style={{ opacity: 0.5, fontVariationSettings: "'FILL' 1" }}
@@ -3985,7 +4061,7 @@ export default function ColorScaleEditor() {
                                     {cs.lockKeyColor ? 'lock' : 'key'}
                                   </span>
                                 )}
-                                {isAnchor && viewMode === 'default' && (
+                                {isAnchor && (viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
                                   <span
                                     className={`material-symbols-rounded absolute bottom-1 left-1/2 -translate-x-1/2 text-[14px] ${textColor}`}
                                     style={{ opacity: 0.3 }}
@@ -4057,7 +4133,7 @@ export default function ColorScaleEditor() {
                                 })()}
                                 </AnimatePresence>
                               </div>
-                              {viewMode === 'default' && (
+                              {(viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
                               <div className={`text-center text-[10px] leading-tight ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'} relative`}>
                                 <div className="relative">
                                   <input
