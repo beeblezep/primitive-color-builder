@@ -3476,15 +3476,17 @@ export default function ColorScaleEditor() {
                           }`}
                         />
                       </div>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <Checkbox
-                          checked={cs.lockKeyColor}
-                          onCheckedChange={() => toggleLockKeyColor(cs.id)}
-                          size="1"
-                          data-checkbox-type="regular"
-                        />
-                        <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Lock</span>
-                      </label>
+                      <Tooltip content="Lock a key color if you need to use the exact HEX value in your scale (useful for brand colors).">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <Checkbox
+                            checked={cs.lockKeyColor}
+                            onCheckedChange={() => toggleLockKeyColor(cs.id)}
+                            size="1"
+                            data-checkbox-type="regular"
+                          />
+                          <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Lock</span>
+                        </label>
+                      </Tooltip>
                       {!cs.isSingleColor && (
                         <Tooltip content="Include pure white and black swatches at the ends">
                           <label className="flex items-center gap-1.5 cursor-pointer">
