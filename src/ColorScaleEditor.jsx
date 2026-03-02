@@ -2618,14 +2618,6 @@ export default function ColorScaleEditor() {
 
           {/* Desktop Social Links - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 pt-2">
-            <button
-              onClick={() => setShowHowToUse(true)}
-              className={`text-sm font-medium transition-opacity hover:opacity-70 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}
-              aria-label="How to use"
-            >
-              How to use
-            </button>
-            <div className={`w-px h-5 ${theme === 'light' ? 'bg-gray-700' : 'bg-gray-700'}`}></div>
             <a
               href="https://github.com/beeblezep/color-scale-editor"
               target="_blank"
@@ -2686,16 +2678,6 @@ export default function ColorScaleEditor() {
               className="md:hidden overflow-hidden mb-4"
             >
               <div className={`cardboard-panel p-4 flex flex-col gap-3 ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-1100'}`}>
-                <button
-                  onClick={() => {
-                    setShowHowToUse(true);
-                    setShowMobileMenu(false);
-                  }}
-                  className={`text-sm font-medium text-left transition-opacity hover:opacity-70 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}
-                >
-                  How to use
-                </button>
-                <div className={`w-full h-px ${theme === 'light' ? 'bg-gray-400' : 'bg-gray-900'}`}></div>
                 <a
                   href="https://github.com/beeblezep/color-scale-editor"
                   target="_blank"
@@ -2724,7 +2706,21 @@ export default function ColorScaleEditor() {
         </AnimatePresence>
 
         {/* Action Buttons - Icon Only */}
-        <div className="flex flex-wrap justify-end items-center gap-2 md:gap-3 mb-4">
+        <div className="flex flex-wrap justify-between items-center gap-2 md:gap-3 mb-4">
+          <p className={`text-xs ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} max-w-xl`}>
+            Pre-baked with settings — see {' '}
+            <button
+              onClick={() => setShowHowToUse(true)}
+              className={`underline cursor-pointer ${
+                theme === 'light'
+                  ? 'text-gray-900 hover:text-gray-700'
+                  : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              how to use
+            </button>.
+          </p>
+          <div className="flex flex-wrap justify-end items-center gap-2 md:gap-3">
           <input
             type="file"
             accept=".json"
@@ -2797,6 +2793,7 @@ export default function ColorScaleEditor() {
               Copied!
             </span>
           )}
+          </div>
         </div>
 
         {/* Global Settings - Compact Input Controls */}
