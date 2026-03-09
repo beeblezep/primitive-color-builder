@@ -74,6 +74,20 @@ export default function ColorScaleEditor() {
   const [showHowToUse, setShowHowToUse] = useState(false); // Toggle "How to use" page
   const [showMobileMenu, setShowMobileMenu] = useState(false); // Toggle mobile menu
 
+  // UI Preview Dashboard State
+  const [showUIPreview, setShowUIPreview] = useState(false); // Toggle UI preview panel visibility
+  const [semanticMappings, setSemanticMappings] = useState({
+    primary: null,      // Color scale ID for primary actions/brand
+    secondary: null,    // Color scale ID for secondary actions
+    neutral: null,      // Color scale ID for backgrounds/surfaces
+    accent: null,       // Color scale ID for highlights/accents
+    success: null,      // Color scale ID for success states
+    warning: null,      // Color scale ID for warning states
+    error: null,        // Color scale ID for error/destructive states
+    info: null          // Color scale ID for informational states
+  });
+  const uiPreviewPanelRef = useRef(null); // For auto-scroll behavior
+
   // Sync swatch background with theme changes
   useEffect(() => {
     setSwatchBackground(theme === 'light' ? '#ffffff' : '#000000');
@@ -1847,6 +1861,17 @@ export default function ColorScaleEditor() {
 
   const removeColorScale = (id) => {
     setColorScales(colorScales.filter(cs => cs.id !== id));
+
+    // Clean up semantic mappings that reference this scale
+    setSemanticMappings(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(role => {
+        if (updated[role] === id) {
+          updated[role] = null;
+        }
+      });
+      return updated;
+    });
   };
 
   // Helper function to determine effective swatch count for a scale
@@ -2441,6 +2466,18 @@ export default function ColorScaleEditor() {
     }
   }, [previewColorsByFamily, isGenerating]);
 
+  // Auto-scroll to UI preview panel when shown
+  useEffect(() => {
+    if (showUIPreview && uiPreviewPanelRef.current) {
+      setTimeout(() => {
+        uiPreviewPanelRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }, 350); // Delay to allow animation to start
+    }
+  }, [showUIPreview]);
+
   // Export to Figma Tokens format
   const exportToFigmaTokens = () => {
     const tokens = {
@@ -2557,6 +2594,434 @@ export default function ColorScaleEditor() {
     URL.revokeObjectURL(url);
   };
 
+  // Update semantic mapping for UI preview
+  const updateSemanticMapping = (role, scaleId) => {
+    setSemanticMappings(prev => ({
+      ...prev,
+      [role]: scaleId
+    }));
+  };
+
+  // Generate color variables for UI preview dashboard
+  const generateUIPreviewColors = () => {
+    const colorVars = {};
+
+    Object.entries(semanticMappings).forEach(([role, scaleId]) => {
+      if (scaleId === null) return;
+
+      const colorScale = colorScales.find(cs => cs.id === scaleId);
+      if (!colorScale) return;
+
+      // Generate the color scale
+      let scale;
+      if (colorScale.isSingleColor) {
+        // Single color mode - use the same hex for all shades
+        scale = [{ hex: colorScale.hex, step: 500, lstar: '50.0', isCustom: false }];
+      } else {
+        // Generate full scale
+        const lstarMin = colorScale.useCustomLstarRange ? colorScale.lstarMin : globalLstarMin;
+        const lstarMax = colorScale.useCustomLstarRange ? colorScale.lstarMax : globalLstarMax;
+
+        // Generate base scale
+        let generatedScale = generateColorScale(
+          colorScale.hex,
+          colorScale.useCustomBezier ? colorScale.cp1 : null,
+          colorScale.useCustomBezier ? colorScale.cp2 : null,
+          lstarMin,
+          lstarMax,
+          colorScale.saturationMin,
+          colorScale.saturationMax,
+          colorScale.hueShiftDark,
+          colorScale.hueShiftLight,
+          colorScale.gamut
+        );
+
+        // Handle includeAnchors and slicing
+        if (!colorScale.includeAnchors) {
+          generatedScale = generatedScale.slice(1, -1);
+        }
+
+        // Handle custom swatch count
+        if (colorScale.swatchCountOverride) {
+          const targetCount = colorScale.swatchCountOverride;
+          if (generatedScale.length > targetCount) {
+            const step = (generatedScale.length - 1) / (targetCount - 1);
+            const sliced = [];
+            for (let i = 0; i < targetCount; i++) {
+              const index = Math.round(i * step);
+              sliced.push(generatedScale[index]);
+            }
+            generatedScale = sliced;
+          }
+        }
+
+        // Apply custom swatches AFTER slicing (keyed by step)
+        generatedScale.forEach((swatch, i) => {
+          if (colorScale.customSwatches[swatch.step]) {
+            generatedScale[i] = {
+              ...swatch,
+              hex: colorScale.customSwatches[swatch.step],
+              isCustom: true
+            };
+          }
+        });
+
+        scale = generatedScale;
+      }
+
+      // Extract color values for different shades
+      const scaleLength = scale.length;
+      colorVars[role] = {
+        lightest: scale[0]?.hex || '#ffffff',
+        light: scale[Math.min(1, scaleLength - 1)]?.hex || '#f5f5f5',
+        medium: scale[Math.floor(scaleLength / 2)]?.hex || '#808080',
+        dark: scale[Math.max(0, scaleLength - 2)]?.hex || '#333333',
+        darkest: scale[scaleLength - 1]?.hex || '#000000',
+        scale: scale
+      };
+    });
+
+    return colorVars;
+  };
+
+  // Mobile UI Preview Component
+  const DashboardPreview = ({ colors, theme, semanticMappings }) => {
+    // Early return if no colors assigned
+    const hasColors = Object.values(semanticMappings).some(v => v !== null);
+    if (!hasColors) {
+      return (
+        <div className={`p-8 text-center rounded-lg border-2 border-dashed ${
+          theme === 'light' ? 'border-gray-300 text-neutral-900' : 'border-gray-1000 text-gray-500'
+        }`}>
+          <span className="material-symbols-rounded text-4xl mb-2 opacity-50">palette</span>
+          <p className="font-jetbrains-mono text-sm">
+            Assign color scales above to see the preview
+          </p>
+        </div>
+      );
+    }
+
+    // Extract colors with fallbacks - get more shades for surface layering
+    const getColorShades = (color) => {
+      if (!color || !color.scale) return null;
+      const scale = color.scale;
+      return {
+        50: scale[0]?.hex,
+        100: scale[1]?.hex,
+        200: scale[2]?.hex,
+        300: scale[3]?.hex,
+        400: scale[4]?.hex,
+        500: scale[5]?.hex || scale[Math.floor(scale.length / 2)]?.hex,
+        600: scale[6]?.hex || scale[Math.floor(scale.length * 0.6)]?.hex,
+        700: scale[7]?.hex || scale[Math.floor(scale.length * 0.7)]?.hex,
+        800: scale[8]?.hex || scale[Math.floor(scale.length * 0.8)]?.hex,
+        900: scale[9]?.hex || scale[scale.length - 1]?.hex,
+      };
+    };
+
+    const primary = getColorShades(colors.primary) || { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' };
+    const secondary = getColorShades(colors.secondary) || { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' };
+    const neutral = getColorShades(colors.neutral) || { 50: '#fafafa', 100: '#f5f5f5', 200: '#e5e5e5', 300: '#d4d4d4', 400: '#a3a3a3', 500: '#737373', 600: '#525252', 700: '#404040', 800: '#262626', 900: '#171717' };
+    const accent = getColorShades(colors.accent) || { 50: '#fdf4ff', 100: '#fae8ff', 200: '#f5d0fe', 300: '#f0abfc', 400: '#e879f9', 500: '#d946ef', 600: '#c026d3', 700: '#a21caf', 800: '#86198f', 900: '#701a75' };
+    const success = getColorShades(colors.success) || { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d' };
+    const warning = getColorShades(colors.warning) || { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' };
+    const error = getColorShades(colors.error) || { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c' };
+    const info = getColorShades(colors.info) || { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className={`text-xs font-jetbrains-mono uppercase tracking-wide mb-3 ${
+            theme === 'light' ? 'text-neutral-600' : 'text-gray-500'
+          }`}>
+            Mobile App Screens - See how your colors work together
+          </p>
+          <div className={`text-[11px] font-jetbrains-mono grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1.5 ${
+            theme === 'light' ? 'text-neutral-500' : 'text-gray-600'
+          }`}>
+            <div><span className="font-semibold">Primary:</span> Main actions, headers</div>
+            <div><span className="font-semibold">Secondary:</span> Outlined buttons, toggles</div>
+            <div><span className="font-semibold">Accent:</span> Avatars, highlights, icons</div>
+            <div><span className="font-semibold">Neutral:</span> Surfaces, backgrounds, text</div>
+            <div><span className="font-semibold">Success:</span> Confirmations, positive states</div>
+            <div><span className="font-semibold">Warning:</span> Cautions, pending states</div>
+            <div><span className="font-semibold">Error:</span> Errors, destructive actions</div>
+            <div><span className="font-semibold">Info:</span> Tips, badges, notifications</div>
+          </div>
+        </div>
+
+        {/* Grid of mobile screens */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          {/* Login Screen */}
+          <div className="space-y-2">
+            <p className={`text-xs font-jetbrains-mono ${
+              theme === 'light' ? 'text-neutral-600' : 'text-gray-500'
+            }`}>Login Screen</p>
+            <div className="rounded-2xl overflow-hidden border shadow-lg"
+              style={{
+                backgroundColor: neutral[50],
+                borderColor: neutral[200],
+                aspectRatio: '9/19.5'
+              }}>
+              {/* Status bar */}
+              <div className="h-6 flex items-center justify-between px-4 text-[8px]"
+                style={{ color: neutral[900] }}>
+                <span>9:41</span>
+                <div className="flex gap-0.5">
+                  <div className="w-3 h-2 rounded-sm" style={{ backgroundColor: neutral[400] }}></div>
+                  <div className="w-3 h-2 rounded-sm" style={{ backgroundColor: neutral[400] }}></div>
+                  <div className="w-3 h-2 rounded-sm" style={{ backgroundColor: neutral[400] }}></div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                <div className="space-y-2 pt-8">
+                  <div className="h-8 w-8 rounded-full" style={{ backgroundColor: primary[500] }}></div>
+                  <div className="h-4 w-24 rounded" style={{ backgroundColor: neutral[900] }}></div>
+                  <div className="h-3 w-32 rounded" style={{ backgroundColor: neutral[400] }}></div>
+                </div>
+
+                {/* Card with inputs */}
+                <div className="rounded-xl p-4 space-y-3 shadow-sm"
+                  style={{ backgroundColor: neutral[100], border: `1px solid ${neutral[200]}` }}>
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-12 rounded" style={{ backgroundColor: neutral[600] }}></div>
+                    <div className="h-8 rounded-lg px-3 flex items-center"
+                      style={{ backgroundColor: neutral[50], border: `1px solid ${neutral[300]}` }}>
+                      <div className="h-2 w-20 rounded" style={{ backgroundColor: neutral[400] }}></div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-16 rounded" style={{ backgroundColor: neutral[600] }}></div>
+                    <div className="h-8 rounded-lg px-3 flex items-center"
+                      style={{ backgroundColor: neutral[50], border: `1px solid ${neutral[300]}` }}>
+                      <div className="h-2 w-16 rounded" style={{ backgroundColor: neutral[400] }}></div>
+                    </div>
+                  </div>
+                  <div className="h-9 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: primary[500] }}>
+                    <div className="h-2 w-12 rounded" style={{ backgroundColor: 'white' }}></div>
+                  </div>
+                  <div className="h-9 rounded-lg flex items-center justify-center border"
+                    style={{ backgroundColor: 'transparent', borderColor: secondary[500] }}>
+                    <div className="h-2 w-16 rounded" style={{ backgroundColor: secondary[600] }}></div>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-2">
+                  <div className="h-2 w-24 rounded mx-auto" style={{ backgroundColor: neutral[500] }}></div>
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: info[100] }}>
+                    <div className="w-1 h-1 rounded-full" style={{ backgroundColor: info[500] }}></div>
+                    <div className="h-1.5 w-16 rounded" style={{ backgroundColor: info[700] }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Screen */}
+          <div className="space-y-2">
+            <p className={`text-xs font-jetbrains-mono ${
+              theme === 'light' ? 'text-neutral-600' : 'text-gray-500'
+            }`}>Profile Screen</p>
+            <div className="rounded-2xl overflow-hidden border shadow-lg"
+              style={{
+                backgroundColor: neutral[50],
+                borderColor: neutral[200],
+                aspectRatio: '9/19.5'
+              }}>
+              {/* Header */}
+              <div className="h-32 relative" style={{ backgroundColor: primary[500] }}>
+                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end gap-3">
+                  <div className="w-16 h-16 rounded-full border-4"
+                    style={{ backgroundColor: neutral[200], borderColor: neutral[50] }}></div>
+                  <div className="flex-1 pb-2 space-y-1">
+                    <div className="h-3 w-24 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}></div>
+                    <div className="h-2 w-32 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.7)' }}></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 space-y-3">
+                {/* Stats cards */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[primary, accent, secondary].map((color, i) => (
+                    <div key={i} className="rounded-lg p-2 text-center space-y-1"
+                      style={{ backgroundColor: neutral[100], border: `1px solid ${neutral[200]}` }}>
+                      <div className="h-3 w-8 rounded mx-auto" style={{ backgroundColor: color[500] }}></div>
+                      <div className="h-1.5 w-12 rounded mx-auto" style={{ backgroundColor: neutral[400] }}></div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Info sections with badges */}
+                <div className="space-y-2">
+                  {[success, info, accent].map((badgeColor, i) => (
+                    <div key={i} className="rounded-lg p-3 space-y-1.5"
+                      style={{ backgroundColor: neutral[100], border: `1px solid ${neutral[200]}` }}>
+                      <div className="flex items-center justify-between">
+                        <div className="h-2 w-20 rounded" style={{ backgroundColor: neutral[600] }}></div>
+                        <div className="px-1.5 py-0.5 rounded text-[6px]" style={{ backgroundColor: badgeColor[100] }}>
+                          <div className="h-1 w-6 rounded" style={{ backgroundColor: badgeColor[700] }}></div>
+                        </div>
+                      </div>
+                      <div className="h-2 w-32 rounded" style={{ backgroundColor: neutral[400] }}></div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <div className="flex-1 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: primary[500] }}>
+                    <div className="h-1.5 w-12 rounded" style={{ backgroundColor: 'white' }}></div>
+                  </div>
+                  <div className="flex-1 h-8 rounded-lg flex items-center justify-center border"
+                    style={{ backgroundColor: 'transparent', borderColor: secondary[400] }}>
+                    <div className="h-1.5 w-10 rounded" style={{ backgroundColor: secondary[600] }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feed/List Screen */}
+          <div className="space-y-2">
+            <p className={`text-xs font-jetbrains-mono ${
+              theme === 'light' ? 'text-neutral-600' : 'text-gray-500'
+            }`}>Feed Screen</p>
+            <div className="rounded-2xl overflow-hidden border shadow-lg"
+              style={{
+                backgroundColor: neutral[100],
+                borderColor: neutral[200],
+                aspectRatio: '9/19.5'
+              }}>
+              {/* Header */}
+              <div className="h-12 flex items-center justify-between px-4"
+                style={{ backgroundColor: neutral[50], borderBottom: `1px solid ${neutral[200]}` }}>
+                <div className="h-3 w-16 rounded" style={{ backgroundColor: neutral[900] }}></div>
+                <div className="flex gap-2">
+                  <div className="w-6 h-6 rounded-full" style={{ backgroundColor: neutral[200] }}></div>
+                </div>
+              </div>
+
+              {/* Feed items */}
+              <div className="p-3 space-y-3">
+                {[success, warning, error].map((itemColor, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden shadow-sm"
+                    style={{ backgroundColor: neutral[50], border: `1px solid ${neutral[200]}` }}>
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full" style={{ backgroundColor: accent[200] }}></div>
+                        <div className="flex-1 space-y-1">
+                          <div className="h-2 w-20 rounded" style={{ backgroundColor: neutral[900] }}></div>
+                          <div className="h-1.5 w-16 rounded" style={{ backgroundColor: neutral[400] }}></div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="h-2 w-full rounded" style={{ backgroundColor: neutral[600] }}></div>
+                        <div className="h-2 w-4/5 rounded" style={{ backgroundColor: neutral[500] }}></div>
+                      </div>
+                      {/* Image placeholder */}
+                      <div className="h-24 rounded-lg -mx-3" style={{ backgroundColor: itemColor[100] }}></div>
+                      <div className="flex items-center gap-4 pt-1">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accent[100] }}>
+                            <div className="w-1.5 h-1.5 rounded-full m-0.5" style={{ backgroundColor: accent[500] }}></div>
+                          </div>
+                          <div className="h-1.5 w-6 rounded" style={{ backgroundColor: neutral[600] }}></div>
+                        </div>
+                        <div className="h-2 w-8 rounded" style={{ backgroundColor: neutral[500] }}></div>
+                        <div className="h-2 w-8 rounded" style={{ backgroundColor: neutral[500] }}></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Settings Screen */}
+          <div className="space-y-2">
+            <p className={`text-xs font-jetbrains-mono ${
+              theme === 'light' ? 'text-neutral-600' : 'text-gray-500'
+            }`}>Settings Screen</p>
+            <div className="rounded-2xl overflow-hidden border shadow-lg"
+              style={{
+                backgroundColor: neutral[100],
+                borderColor: neutral[200],
+                aspectRatio: '9/19.5'
+              }}>
+              {/* Header */}
+              <div className="h-12 flex items-center px-4"
+                style={{ backgroundColor: neutral[50], borderBottom: `1px solid ${neutral[200]}` }}>
+                <div className="h-4 w-20 rounded" style={{ backgroundColor: neutral[900] }}></div>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 space-y-4">
+                {/* Account section */}
+                <div className="space-y-1">
+                  <div className="h-2 w-16 rounded mb-2" style={{ backgroundColor: neutral[500] }}></div>
+                  <div className="rounded-xl overflow-hidden"
+                    style={{ backgroundColor: neutral[50], border: `1px solid ${neutral[200]}` }}>
+                    {[neutral, secondary, accent].map((toggleColor, i) => (
+                      <div key={i}
+                        className="flex items-center justify-between px-3 py-2.5"
+                        style={{ borderBottom: i < 2 ? `1px solid ${neutral[200]}` : 'none' }}>
+                        <div className="h-2 w-20 rounded" style={{ backgroundColor: neutral[700] }}></div>
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: toggleColor[300] }}></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notifications with badges */}
+                <div className="space-y-1">
+                  <div className="h-2 w-20 rounded mb-2" style={{ backgroundColor: neutral[500] }}></div>
+                  <div className="rounded-xl overflow-hidden"
+                    style={{ backgroundColor: neutral[50], border: `1px solid ${neutral[200]}` }}>
+                    {[
+                      { color: info, active: true },
+                      { color: success, active: true },
+                      { color: warning, active: false }
+                    ].map((item, i) => (
+                      <div key={i}
+                        className="flex items-center justify-between px-3 py-2.5"
+                        style={{ borderBottom: i < 2 ? `1px solid ${neutral[200]}` : 'none' }}>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-24 rounded" style={{ backgroundColor: neutral[700] }}></div>
+                          {item.active && (
+                            <div className="px-1 py-0.5 rounded" style={{ backgroundColor: item.color[100] }}>
+                              <div className="h-1 w-4 rounded" style={{ backgroundColor: item.color[600] }}></div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: item.active ? primary[500] : neutral[300] }}></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Danger section */}
+                <div className="space-y-1">
+                  <div className="h-2 w-12 rounded mb-2" style={{ backgroundColor: neutral[500] }}></div>
+                  <div className="rounded-xl px-3 py-2.5"
+                    style={{ backgroundColor: error[50], border: `1px solid ${error[200]}` }}>
+                    <div className="h-2 w-28 rounded" style={{ backgroundColor: error[700] }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Theme appearance={theme} accentColor="gray">
       <div className={`min-h-screen p-4 md:p-8 ${theme === 'light' ? 'bg-warm-gray-200 text-neutral-1100' : 'bg-warm-gray-1100 text-gray-200'}`}>
@@ -2618,6 +3083,17 @@ export default function ColorScaleEditor() {
 
           {/* Desktop Social Links - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 pt-2">
+            <button
+              data-tally-open="1AKbD1"
+              data-tally-layout="modal"
+              data-tally-hide-title="1"
+              className={`text-sm font-medium transition-opacity hover:opacity-70 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}
+            >
+              Feedback
+            </button>
+
+            <div className={`w-px h-5 ${theme === 'light' ? 'bg-neutral-500' : 'bg-gray-700'}`}></div>
+
             <a
               href="https://github.com/beeblezep/color-scale-editor"
               target="_blank"
@@ -2678,6 +3154,17 @@ export default function ColorScaleEditor() {
               className="md:hidden overflow-hidden mb-4"
             >
               <div className={`cardboard-panel p-4 flex flex-col gap-3 ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-1100'}`}>
+                <button
+                  data-tally-open="1AKbD1"
+                  data-tally-layout="modal"
+                  data-tally-hide-title="1"
+                  className={`flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}
+                >
+                  Feedback
+                </button>
+
+                <div className={`w-full h-px ${theme === 'light' ? 'bg-neutral-300' : 'bg-gray-700'}`}></div>
+
                 <a
                   href="https://github.com/beeblezep/color-scale-editor"
                   target="_blank"
@@ -2784,6 +3271,23 @@ export default function ColorScaleEditor() {
             >
               <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                 share
+              </span>
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Preview UI with color scales">
+            <button
+              onClick={() => setShowUIPreview(!showUIPreview)}
+              className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
+                theme === 'light'
+                  ? 'bg-gray-100 text-neutral-900 border border-gray-300'
+                  : 'bg-gray-1300 text-gray-400 border border-gray-1100'
+              } ${showUIPreview ? 'ring-2 ring-offset-2 ring-neutral-900' : ''}`}
+              aria-label="Preview UI with color scales"
+              aria-pressed={showUIPreview}
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                dashboard
               </span>
             </button>
           </Tooltip>
@@ -4757,6 +5261,102 @@ export default function ColorScaleEditor() {
         </>
         )}
       </div>
+
+      {/* UI Preview Panel */}
+      <AnimatePresence mode="wait">
+        {showUIPreview && (
+          <motion.div
+            key="ui-preview"
+            ref={uiPreviewPanelRef}
+            layout
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{
+              opacity: 1,
+              height: 'auto',
+              marginBottom: 24,
+              transition: {
+                duration: motionPresets.accordionEnter.duration / 1000,
+                ease: motionPresets.accordionEnter.easing
+              }
+            }}
+            exit={{
+              opacity: 0,
+              height: 0,
+              marginBottom: 0,
+              transition: {
+                duration: motionPresets.accordionExit.duration / 1000,
+                ease: motionPresets.accordionExit.easing
+              }
+            }}
+            className={`cardboard-panel rounded-xl p-4 sm:p-6 overflow-hidden ${
+              theme === 'light' ? 'bg-white border border-gray-200' : 'bg-gray-1300 border border-zinc-800'
+            }`}
+          >
+            {/* Header with close button */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`font-jetbrains-mono text-lg font-semibold ${
+                theme === 'light' ? 'text-neutral-1100' : 'text-white'
+              }`}>
+                UI Preview
+              </h3>
+              <button
+                onClick={() => setShowUIPreview(false)}
+                className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
+                  theme === 'light'
+                    ? 'bg-gray-100 text-neutral-900 border border-gray-300'
+                    : 'bg-gray-1300 text-gray-400 border border-gray-1100'
+                }`}
+                aria-label="Close UI preview panel"
+              >
+                <span className="material-symbols-rounded text-[20px]">close</span>
+              </button>
+            </div>
+
+            {/* Semantic Role Mapping Controls */}
+            <div className="mb-6">
+              <p className={`font-jetbrains-mono text-sm mb-3 ${
+                theme === 'light' ? 'text-neutral-900' : 'text-gray-400'
+              }`}>
+                Assign semantic roles to your color scales
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {Object.keys(semanticMappings).map(role => (
+                  <div key={role}>
+                    <label className={`font-jetbrains-mono block text-xs font-medium mb-1 capitalize ${
+                      theme === 'light' ? 'text-neutral-900' : 'text-gray-500'
+                    }`}>
+                      {role}
+                    </label>
+                    <select
+                      value={semanticMappings[role] ?? ''}
+                      onChange={(e) => updateSemanticMapping(role, e.target.value === '' ? null : parseInt(e.target.value))}
+                      className={`w-full px-2 py-1.5 rounded text-sm font-mono ${
+                        theme === 'light'
+                          ? 'bg-white text-neutral-900 border border-gray-300'
+                          : 'bg-gray-1200 text-gray-300 border border-gray-1000'
+                      }`}
+                    >
+                      <option value="">None</option>
+                      {colorScales.map(cs => (
+                        <option key={cs.id} value={cs.id}>
+                          {cs.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dashboard Preview Component */}
+            <DashboardPreview
+              colors={generateUIPreviewColors()}
+              theme={theme}
+              semanticMappings={semanticMappings}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Credit text */}
       <div className="text-center py-8">
