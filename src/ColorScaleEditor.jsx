@@ -528,7 +528,7 @@ export default function ColorScaleEditor() {
         <div className={`font-semibold mb-2 ${headingClass}`}>
           {colorName} Text: {contrastValue.toFixed(1)}:1
         </div>
-        <div className="text-xs space-y-1">
+        <div className="text-sm space-y-1">
           <div className={`font-medium mb-1 ${subheadingClass}`}>WCAG 2.0 Level AA:</div>
           <div className={passes3 ? passClass : failClass}>
             {passes3 ? '✓' : '✗'} Large text (18pt+): 3:1
@@ -574,7 +574,7 @@ export default function ColorScaleEditor() {
 
         {useFor.length > 0 && (
           <div className="mb-2">
-            <div className={`text-xs font-medium mb-1 ${subheadingClass}`}>Use for:</div>
+            <div className={`text-sm font-medium mb-1 ${subheadingClass}`}>Use for:</div>
             <div className="flex flex-wrap gap-1">
               {useFor.map(t => (
                 <span key={t.label} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-700 text-white">
@@ -587,7 +587,7 @@ export default function ColorScaleEditor() {
 
         {avoidFor.length > 0 && (
           <div>
-            <div className={`text-xs font-medium mb-1 ${subheadingClass}`}>Avoid for:</div>
+            <div className={`text-sm font-medium mb-1 ${subheadingClass}`}>Avoid for:</div>
             <div className="flex flex-wrap gap-1">
               {avoidFor.map(t => (
                 <span key={t.label} className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 text-white">
@@ -613,13 +613,13 @@ export default function ColorScaleEditor() {
         <div className={`font-semibold mb-2 ${warningClass}`}>
           {colorName} Text: Below Threshold
         </div>
-        <div className={`text-xs mb-2 ${primaryClass}`}>
+        <div className={`text-sm mb-2 ${primaryClass}`}>
           {mode === 'aa'
             ? `Contrast: ${contrastValue.toFixed(1)}:1 (needs 4.5:1)`
             : `Lc ${contrastValue.toFixed(0)} (needs 60+)`
           }
         </div>
-        <div className={`text-xs ${secondaryClass}`}>
+        <div className={`text-sm ${secondaryClass}`}>
           This color doesn't meet minimum accessibility standards for text.
           Consider using it for decorative elements only.
         </div>
@@ -2707,7 +2707,7 @@ export default function ColorScaleEditor() {
 
         {/* Action Buttons - Icon Only */}
         <div className="flex flex-wrap justify-between items-center gap-2 md:gap-3 mb-4">
-          <p className={`text-xs ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} max-w-xl`}>
+          <p className={`text-sm ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} max-w-xl`}>
             Pre-baked with settings — see {' '}
             <button
               onClick={() => setShowHowToUse(true)}
@@ -2789,7 +2789,7 @@ export default function ColorScaleEditor() {
           </Tooltip>
 
           {showCopiedMessage && (
-            <span className="text-xs text-emerald-500 font-medium animate-pulse">
+            <span className="text-sm text-emerald-500 font-medium animate-pulse">
               Copied!
             </span>
           )}
@@ -2800,12 +2800,12 @@ export default function ColorScaleEditor() {
         <div className={`cardboard-panel rounded-xl p-4 mb-3 ${theme === 'light' ? 'bg-white border border-gray-200' : 'bg-black border border-zinc-800'}`}>
           {/* Header with Reset Button */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className={`font-jetbrains-mono text-xs font-medium uppercase tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+            <h2 className={`font-jetbrains-mono text-sm font-medium uppercase ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
               Global Settings
             </h2>
             <button
               onClick={resetAllSettings}
-              className={`cardboard-small-button px-2 py-1 text-xs ${
+              className={`cardboard-small-button px-2 py-1 text-sm ${
                 theme === 'light'
                   ? 'text-gray-900 hover:text-neutral-900'
                   : 'text-gray-500 border border-gray-1000 hover:text-gray-300'
@@ -2820,7 +2820,7 @@ export default function ColorScaleEditor() {
           <div className="flex flex-wrap items-center gap-4 md:gap-6">
             {/* Theme Toggle */}
             <div className="flex items-center gap-2">
-              <label className={`font-jetbrains-mono text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Theme
               </label>
               <SegmentedControl.Root value={theme} onValueChange={setTheme} size="1">
@@ -2831,7 +2831,7 @@ export default function ColorScaleEditor() {
 
             {/* View Mode Toggle */}
             <div className="flex items-center gap-2">
-              <label className={`font-jetbrains-mono text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 View
               </label>
               <SegmentedControl.Root value={viewMode} onValueChange={setViewMode} size="1">
@@ -2843,7 +2843,7 @@ export default function ColorScaleEditor() {
             {/* Contrast Check Toggle */}
             <div className="flex items-center gap-2">
               <Tooltip content={
-                <div className="p-2 max-w-xs text-xs">
+                <div className="p-2 max-w-xs text-sm">
                   <div className={`font-semibold mb-2 ${theme === 'light' ? 'text-white' : 'text-gray-1200'}`}>Contrast Checker</div>
                   <div className="space-y-2">
                     <div>
@@ -2857,7 +2857,7 @@ export default function ColorScaleEditor() {
                   </div>
                 </div>
               }>
-                <label className={`font-jetbrains-mono text-xs font-medium tracking-wider cursor-help ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label className={`font-jetbrains-mono text-sm font-medium cursor-help ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Text contrast
                 </label>
               </Tooltip>
@@ -2878,7 +2878,7 @@ export default function ColorScaleEditor() {
                 transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                 className="flex items-center gap-2 overflow-hidden"
               >
-                <label className={`font-jetbrains-mono text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Text colors
                 </label>
                 <div className="flex items-center gap-1.5">
@@ -2907,7 +2907,7 @@ export default function ColorScaleEditor() {
 
             {/* Display Mode Toggle */}
             <div className="flex items-center gap-2">
-              <label className={`font-jetbrains-mono text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Display
               </label>
               <SegmentedControl.Root
@@ -2931,7 +2931,7 @@ export default function ColorScaleEditor() {
             {/* Swatches Count */}
             <div className="flex items-center gap-2">
               <label
-                className={`font-jetbrains-mono text-xs font-medium tracking-wider cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
+                className={`font-jetbrains-mono text-sm font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
                 onMouseDown={(e) => handleNumberDragStart(e, numSwatches, setNumSwatches, 4, 20, 1)}
                 title="Drag to change"
               >
@@ -2943,7 +2943,7 @@ export default function ColorScaleEditor() {
                 onChange={(e) => setNumSwatches(Math.max(4, Math.min(20, parseInt(e.target.value) || 12)))}
                 min="4"
                 max="20"
-                className="cardboard-input w-14 px-2 py-1 rounded text-xs font-mono"
+                className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
               />
             </div>
 
@@ -2951,7 +2951,7 @@ export default function ColorScaleEditor() {
             {/* SAVED BUTTON CODE - Can be reused for other features:
             <button
               onClick={() => setShowSwatchBorders(!showSwatchBorders)}
-              className={`font-jetbrains-mono px-2.5 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`font-jetbrains-mono px-2.5 py-1.5 rounded text-sm font-medium transition-all flex items-center gap-1.5 ${
                 theme === 'light'
                   ? 'bg-gray-200 text-gray-900 border border-gray-400 hover:bg-gray-300'
                   : 'bg-gray-1200 text-gray-400 border border-gray-1000 hover:bg-gray-1100'
@@ -2970,14 +2970,14 @@ export default function ColorScaleEditor() {
                 size="1"
                 data-checkbox-type="regular"
               />
-              <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
+              <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
                 Swatch borders
               </span>
             </label>
 
             {/* Swatch Background Color */}
             <div className="flex items-center gap-2">
-              <label className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Swatch BG
               </label>
               <input
@@ -2999,13 +2999,13 @@ export default function ColorScaleEditor() {
                     setSwatchBackground(value);
                   }
                 }}
-                className="cardboard-input w-20 px-2 py-1 rounded text-xs font-mono"
+                className="cardboard-input w-20 px-2 py-1 rounded text-sm font-mono"
               />
             </div>
 
             {/* Token Numbering */}
             <div className="flex items-center gap-3">
-              <label className={`font-jetbrains-mono text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Token numbering
               </label>
               <SegmentedControl.Root
@@ -3041,7 +3041,7 @@ export default function ColorScaleEditor() {
                         size="1"
                         data-checkbox-type="regular"
                       />
-                      <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Custom:</span>
+                      <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Custom:</span>
                     </label>
                     <input
                       type="number"
@@ -3050,7 +3050,7 @@ export default function ColorScaleEditor() {
                       disabled={!useCustomIncrement}
                       min="1"
                       max="1000"
-                      className={`font-jetbrains-mono w-16 px-2 py-1 rounded-md text-xs focus:outline-none ${
+                      className={`font-jetbrains-mono w-16 px-2 py-1 rounded-md text-sm focus:outline-none ${
                         theme === 'light'
                           ? 'bg-white border border-gray-300 text-neutral-1100 focus:border-cyan-600'
                           : 'bg-black border border-zinc-700 focus:border-zinc-600'
@@ -3064,7 +3064,7 @@ export default function ColorScaleEditor() {
                       size="1"
                       data-checkbox-type="regular"
                     />
-                    <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Reverse order</span>
+                    <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Reverse order</span>
                   </label>
                 </div>
               </div>
@@ -3077,7 +3077,7 @@ export default function ColorScaleEditor() {
                 onCheckedChange={() => setShowVisualControls(!showVisualControls)}
                 className="scale-75"
               />
-              <span className={`font-jetbrains-mono text-xs ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
+              <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
             </label>
           </div>
 
@@ -3095,7 +3095,7 @@ export default function ColorScaleEditor() {
               {/* Color Space Toggle (beta) */}
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <label className={`font-jetbrains-mono text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                  <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                     Color space (beta)
                   </label>
                   <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
@@ -3107,14 +3107,14 @@ export default function ColorScaleEditor() {
                       <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
                       <SegmentedControl.Item value="p3">
                         Display P3
-                        {!supportsP3 && <span className="text-xs opacity-50 ml-1">(unsupported)</span>}
+                        {!supportsP3 && <span className="text-sm opacity-50 ml-1">(unsupported)</span>}
                       </SegmentedControl.Item>
                     </SegmentedControl.Root>
                   </Tooltip>
                 </div>
                 {/* P3 Browser Warning */}
                 {globalGamut === 'p3' && !supportsP3 && (
-                  <div className={`px-3 py-2 rounded text-xs ${theme === 'light' ? 'bg-orange-100 text-orange-900' : 'bg-orange-900/30 text-orange-300'}`}>
+                  <div className={`px-3 py-2 rounded text-sm ${theme === 'light' ? 'bg-orange-100 text-orange-900' : 'bg-orange-900/30 text-orange-300'}`}>
                     ⚠ Display P3 not supported in this browser. Colors shown in sRGB.
                   </div>
                 )}
@@ -3125,7 +3125,7 @@ export default function ColorScaleEditor() {
                 {/* P1 */}
                 <div className="flex items-center gap-2">
                   <label
-                    className={`text-xs font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
+                    className={`text-sm font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
                     onMouseDown={(e) => handleNumberDragStart(e, cp1.x, (v) => setCp1({ ...cp1, x: v }), 0, 1, 0.01)}
                     title="Drag to change X"
                   >
@@ -3138,7 +3138,7 @@ export default function ColorScaleEditor() {
                     min="0"
                     max="1"
                     step="0.01"
-                    className="cardboard-input w-16 px-2 py-1 rounded text-xs font-mono"
+                    className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <input
                     type="number"
@@ -3147,14 +3147,14 @@ export default function ColorScaleEditor() {
                     min="0"
                     max="1"
                     step="0.01"
-                    className="cardboard-input w-16 px-2 py-1 rounded text-xs font-mono"
+                    className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                 </div>
 
                 {/* P2 */}
                 <div className="flex items-center gap-2">
                   <label
-                    className={`text-xs font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
+                    className={`text-sm font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
                     onMouseDown={(e) => handleNumberDragStart(e, cp2.x, (v) => setCp2({ ...cp2, x: v }), 0, 1, 0.01)}
                     title="Drag to change X"
                   >
@@ -3167,7 +3167,7 @@ export default function ColorScaleEditor() {
                     min="0"
                     max="1"
                     step="0.01"
-                    className="cardboard-input w-16 px-2 py-1 rounded text-xs font-mono"
+                    className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <input
                     type="number"
@@ -3176,11 +3176,11 @@ export default function ColorScaleEditor() {
                     min="0"
                     max="1"
                     step="0.01"
-                    className="cardboard-input w-16 px-2 py-1 rounded text-xs font-mono"
+                    className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <button
                     onClick={resetBezierPoints}
-                    className={`ml-1 text-xs ${theme === 'light' ? 'text-neutral-700 hover:text-neutral-900' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`ml-1 text-sm ${theme === 'light' ? 'text-neutral-700 hover:text-neutral-900' : 'text-gray-500 hover:text-gray-300'}`}
                     title="Reset bezier points"
                   >
                     ↺
@@ -3190,7 +3190,7 @@ export default function ColorScaleEditor() {
                 {/* L* Range */}
                 <div className="flex items-center gap-2">
                   <label
-                    className={`text-xs font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
+                    className={`text-sm font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
                     onMouseDown={(e) => handleNumberDragStart(e, globalLstarMin, setGlobalLstarMin, 0, 95, 1)}
                     title="Drag to change Min"
                   >
@@ -3202,7 +3202,7 @@ export default function ColorScaleEditor() {
                     onChange={(e) => setGlobalLstarMin(Math.max(0, Math.min(95, parseInt(e.target.value) || 10)))}
                     min="0"
                     max="95"
-                    className="cardboard-input w-14 px-2 py-1 rounded text-xs font-mono"
+                    className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
                     placeholder="Min"
                   />
                   <span className={theme === 'light' ? 'text-neutral-600' : 'text-gray-600'}>–</span>
@@ -3212,7 +3212,7 @@ export default function ColorScaleEditor() {
                     onChange={(e) => setGlobalLstarMax(Math.max(5, Math.min(100, parseInt(e.target.value) || 98)))}
                     min="5"
                     max="100"
-                    className="cardboard-input w-14 px-2 py-1 rounded text-xs font-mono"
+                    className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
                     placeholder="Max"
                   />
                   <button
@@ -3220,7 +3220,7 @@ export default function ColorScaleEditor() {
                       setGlobalLstarMin(10);
                       setGlobalLstarMax(98);
                     }}
-                    className={`ml-1 text-xs ${theme === 'light' ? 'text-neutral-700 hover:text-neutral-900' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`ml-1 text-sm ${theme === 'light' ? 'text-neutral-700 hover:text-neutral-900' : 'text-gray-500 hover:text-gray-300'}`}
                     title="Reset L* range"
                   >
                     ↺
@@ -3230,12 +3230,12 @@ export default function ColorScaleEditor() {
 
               {/* L* Range Sliders */}
               <div>
-                <label className={`block text-xs font-medium tracking-wider mb-3 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label className={`block text-sm font-medium mb-3 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Global L* range (visual sliders)
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Max (light)</label>
+                    <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                     <input
                       type="range"
                       min="5"
@@ -3244,10 +3244,10 @@ export default function ColorScaleEditor() {
                       onChange={(e) => setGlobalLstarMax(parseInt(e.target.value))}
                       className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                     />
-                    <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {globalLstarMax}</div>
+                    <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {globalLstarMax}</div>
                   </div>
                   <div>
-                    <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Min (dark)</label>
+                    <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                     <input
                       type="range"
                       min="0"
@@ -3256,14 +3256,14 @@ export default function ColorScaleEditor() {
                       onChange={(e) => setGlobalLstarMin(parseInt(e.target.value))}
                       className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                     />
-                    <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {globalLstarMin}</div>
+                    <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {globalLstarMin}</div>
                   </div>
                 </div>
               </div>
 
               {/* Bezier Curve Canvas */}
               <div>
-                <label className={`block text-xs font-medium tracking-wider mb-3 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label className={`block text-sm font-medium mb-3 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Bezier curve (visual editor)
                 </label>
                 <canvas
@@ -3417,7 +3417,7 @@ export default function ColorScaleEditor() {
                     {/* Left controls - wrap on all screens */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Token
                         </label>
                         <input
@@ -3425,7 +3425,7 @@ export default function ColorScaleEditor() {
                           value={cs.name}
                           onChange={(e) => updateColorScaleName(cs.id, e.target.value)}
                           placeholder="color"
-                          className={`font-jetbrains-mono cardboard-input w-32 px-2 py-1 rounded text-xs focus:outline-none ${
+                          className={`font-jetbrains-mono cardboard-input w-32 px-2 py-1 rounded text-sm focus:outline-none ${
                             theme === 'light'
                               ? 'bg-white border border-gray-300 text-neutral-1100 focus:border-cyan-600'
                               : 'bg-black border border-zinc-700 focus:border-zinc-600'
@@ -3439,7 +3439,7 @@ export default function ColorScaleEditor() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Key
                         </label>
                         <input
@@ -3469,7 +3469,7 @@ export default function ColorScaleEditor() {
                               e.target.blur();
                             }
                           }}
-                          className={`font-jetbrains-mono cardboard-input w-20 px-2 py-1 rounded text-xs focus:outline-none ${
+                          className={`font-jetbrains-mono cardboard-input w-20 px-2 py-1 rounded text-sm focus:outline-none ${
                             theme === 'light'
                               ? 'bg-white border border-gray-300 text-neutral-1100 focus:border-cyan-600'
                               : 'bg-black border border-zinc-700 text-gray-200 focus:border-zinc-600'
@@ -3484,7 +3484,7 @@ export default function ColorScaleEditor() {
                             size="1"
                             data-checkbox-type="regular"
                           />
-                          <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Lock</span>
+                          <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Lock</span>
                         </label>
                       </Tooltip>
                       {!cs.isSingleColor && (
@@ -3496,7 +3496,7 @@ export default function ColorScaleEditor() {
                               size="1"
                               data-checkbox-type="regular"
                             />
-                            <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>W/B</span>
+                            <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>W/B</span>
                           </label>
                         </Tooltip>
                       )}
@@ -3507,18 +3507,18 @@ export default function ColorScaleEditor() {
                           size="1"
                           data-checkbox-type="regular"
                         />
-                        <span className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Single</span>
+                        <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Single</span>
                       </label>
                       {!cs.isSingleColor && (
                         <div className="flex items-center gap-1">
-                          <label className={`font-jetbrains-mono text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
+                          <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
                           <input
                             type="number"
                             value={cs.swatchCountOverride ?? numSwatches}
                             onChange={(e) => updateSwatchCountOverride(cs.id, e.target.value)}
                             min="1"
                             max="20"
-                            className="cardboard-input w-12 px-1 py-1 rounded text-xs font-mono"
+                            className="cardboard-input w-12 px-1 py-1 rounded text-sm font-mono"
                           />
                           {cs.swatchCountOverride !== null && (
                             <button
@@ -3538,14 +3538,14 @@ export default function ColorScaleEditor() {
                             onCheckedChange={() => toggleAdvancedSettings(cs.id)}
                             className="scale-75"
                           />
-                          <span className={`font-jetbrains-mono text-xs ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
+                          <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
                         </label>
                       )}
                       {colorScales.length > 1 && (
                         <div className="relative harmonize-dropdown-container">
                           <button
                             onClick={() => setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                            className={`cardboard-small-button px-2 py-1 rounded text-xs font-medium ${
+                            className={`cardboard-small-button px-2 py-1 rounded text-sm font-medium ${
                               theme === 'light'
                                 ? 'bg-gray-300 text-gray-1000 border border-gray-300'
                                 : 'bg-gray-1100 text-white border border-gray-1000'
@@ -3569,13 +3569,13 @@ export default function ColorScaleEditor() {
                                 ? 'bg-white border border-gray-300'
                                 : 'bg-gray-1100 border border-zinc-700'
                             }`}>
-                              <div className={`text-xs font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Harmonize with:</div>
+                              <div className={`text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Harmonize with:</div>
                               <div className="flex flex-col gap-3 max-h-[240px] overflow-y-auto">
                                 {/* Revert button - show if color was harmonized */}
                                 {cs.preHarmonizeHex && (
                                   <button
                                     onClick={() => revertHarmonize(cs.id)}
-                                    className={`px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-2 ${
+                                    className={`px-2 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
                                       theme === 'light'
                                         ? 'bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-300'
                                         : 'bg-orange-950 hover:bg-orange-900 text-orange-400 border border-orange-800'
@@ -3607,7 +3607,7 @@ export default function ColorScaleEditor() {
                                             className="w-3 h-3 rounded"
                                             style={{ background: otherScale.hex }}
                                           />
-                                          <span className="text-xs font-medium font-mono">{otherScale.name}</span>
+                                          <span className="text-sm font-medium font-mono">{otherScale.name}</span>
                                         </div>
                                         <div className="flex flex-col gap-0.5 ml-5">
                                           {colorTheoryMethods.map(method => (
@@ -3709,7 +3709,7 @@ export default function ColorScaleEditor() {
                           checked={cs.useCustomLstarRange}
                           onCheckedChange={() => toggleCustomLstarRange(cs.id)}
                         />
-                        <span className={`text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Use custom L* range</span>
+                        <span className={`text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Use custom L* range</span>
                       </label>
                     </div>
                     <div
@@ -3723,19 +3723,19 @@ export default function ColorScaleEditor() {
                     >
                       <div className="cardboard-panel mb-4 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-2">
-                          <label className={`text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                          <label className={`text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                             Custom L* range (lightness limits)
                           </label>
                           <button
                             onClick={() => resetLstarRange(cs.id)}
-                            className="cardboard-small-button px-2 py-1 text-xs"
+                            className="cardboard-small-button px-2 py-1 text-sm"
                           >
                             Reset
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Max (light)</label>
+                            <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                             <input
                               type="range"
                               min="5"
@@ -3744,10 +3744,10 @@ export default function ColorScaleEditor() {
                               onChange={(e) => updateLstarRange(cs.id, 'max', e.target.value)}
                               className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                             />
-                            <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {cs.lstarMax}</div>
+                            <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {cs.lstarMax}</div>
                           </div>
                           <div>
-                            <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Min (dark)</label>
+                            <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                             <input
                               type="range"
                               min="0"
@@ -3756,29 +3756,29 @@ export default function ColorScaleEditor() {
                               onChange={(e) => updateLstarRange(cs.id, 'min', e.target.value)}
                               className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                             />
-                            <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {cs.lstarMin}</div>
+                            <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {cs.lstarMin}</div>
                           </div>
                         </div>
-                        <div className={`text-xs mt-2 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
+                        <div className={`text-sm mt-2 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
                           Override global L* range for this color scale (e.g., yellow works well at L* 20-90)
                         </div>
                       </div>
                     </div>
                     <div className="cardboard-panel mb-4 rounded-lg p-3">
                       <div className="flex justify-between items-center mb-2">
-                        <label className={`text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label className={`text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Saturation range
                         </label>
                         <button
                           onClick={() => resetSaturationRange(cs.id)}
-                          className="cardboard-small-button px-2 py-1 text-xs"
+                          className="cardboard-small-button px-2 py-1 text-sm"
                         >
                           Reset
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Max (light)</label>
+                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                           <input
                             type="range"
                             min="0"
@@ -3787,10 +3787,10 @@ export default function ColorScaleEditor() {
                             onChange={(e) => updateSaturationRange(cs.id, 'max', e.target.value)}
                             className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                           />
-                          <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.saturationMax}%</div>
+                          <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.saturationMax}%</div>
                         </div>
                         <div>
-                          <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Min (dark)</label>
+                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                           <input
                             type="range"
                             min="0"
@@ -3799,28 +3799,28 @@ export default function ColorScaleEditor() {
                             onChange={(e) => updateSaturationRange(cs.id, 'min', e.target.value)}
                             className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                           />
-                          <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.saturationMin}%</div>
+                          <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.saturationMin}%</div>
                         </div>
                       </div>
-                      <div className={`text-xs mt-2 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
+                      <div className={`text-sm mt-2 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
                         Percentage of base saturation to maintain (100% = full color, 0% = grayscale)
                       </div>
                     </div>
                     <div className="cardboard-panel mb-4 rounded-lg p-3">
                       <div className="flex justify-between items-center mb-2">
-                        <label className={`text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label className={`text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Hue shift
                         </label>
                         <button
                           onClick={() => resetHueShift(cs.id)}
-                          className="cardboard-small-button px-2 py-1 text-xs"
+                          className="cardboard-small-button px-2 py-1 text-sm"
                         >
                           Reset
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Light end</label>
+                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Light end</label>
                           <input
                             type="range"
                             min="-180"
@@ -3829,10 +3829,10 @@ export default function ColorScaleEditor() {
                             onChange={(e) => updateHueShift(cs.id, 'light', e.target.value)}
                             className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                           />
-                          <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.hueShiftLight}°</div>
+                          <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.hueShiftLight}°</div>
                         </div>
                         <div>
-                          <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-600'}`}>Dark end</label>
+                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Dark end</label>
                           <input
                             type="range"
                             min="-180"
@@ -3841,10 +3841,10 @@ export default function ColorScaleEditor() {
                             onChange={(e) => updateHueShift(cs.id, 'dark', e.target.value)}
                             className={`w-full h-1 rounded-lg appearance-none cursor-pointer ${theme === 'light' ? 'bg-gray-300' : 'bg-zinc-700'}`}
                           />
-                          <div className={`text-xs font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.hueShiftDark}°</div>
+                          <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.hueShiftDark}°</div>
                         </div>
                       </div>
-                      <div className={`text-xs mt-2 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
+                      <div className={`text-sm mt-2 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
                         Rotate hue at extremes (e.g., shift yellow toward orange in darks)
                       </div>
                     </div>
@@ -3855,7 +3855,7 @@ export default function ColorScaleEditor() {
                           checked={cs.useCustomBezier}
                           onCheckedChange={() => toggleCustomBezier(cs.id)}
                         />
-                        <span className={`text-xs font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Use custom bezier curve</span>
+                        <span className={`text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Use custom bezier curve</span>
                       </label>
                     </div>
                     <div
@@ -3869,12 +3869,12 @@ export default function ColorScaleEditor() {
                     >
                       <div className="cardboard-panel mb-4 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-3">
-                          <label className={`text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                          <label className={`text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                             Custom bezier curve
                           </label>
                           <button
                             onClick={() => resetCustomBezier(cs.id)}
-                            className="cardboard-small-button px-2 py-1 text-xs"
+                            className="cardboard-small-button px-2 py-1 text-sm"
                           >
                             Reset to global
                           </button>
@@ -3895,7 +3895,7 @@ export default function ColorScaleEditor() {
                           <div className="flex-1">
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>P1</label>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>P1</label>
                                 <div className="flex gap-2">
                                   <input
                                     type="number"
@@ -3904,7 +3904,7 @@ export default function ColorScaleEditor() {
                                     min="0"
                                     max="1"
                                     step="0.01"
-                                    className="cardboard-input w-full px-2 py-1 rounded text-xs font-mono"
+                                    className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                   <input
                                     type="number"
@@ -3913,12 +3913,12 @@ export default function ColorScaleEditor() {
                                     min="0"
                                     max="1"
                                     step="0.01"
-                                    className="cardboard-input w-full px-2 py-1 rounded text-xs font-mono"
+                                    className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                 </div>
                               </div>
                               <div>
-                                <label className={`block text-xs font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>P2</label>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>P2</label>
                                 <div className="flex gap-2">
                                   <input
                                     type="number"
@@ -3927,7 +3927,7 @@ export default function ColorScaleEditor() {
                                     min="0"
                                     max="1"
                                     step="0.01"
-                                    className="cardboard-input w-full px-2 py-1 rounded text-xs font-mono"
+                                    className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                   <input
                                     type="number"
@@ -3936,7 +3936,7 @@ export default function ColorScaleEditor() {
                                     min="0"
                                     max="1"
                                     step="0.01"
-                                    className="cardboard-input w-full px-2 py-1 rounded text-xs font-mono"
+                                    className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                 </div>
                               </div>
@@ -4001,7 +4001,7 @@ export default function ColorScaleEditor() {
                                       : getAPCATooltipContent(color1Contrast, color1Name, theme))
                                     : getNATooltipContent(color1Contrast, color1Name, contrastCheck, theme)
                                   }>
-                                    <div style={{ color: contrastColor1 }} className="text-xs font-mono font-medium leading-none cursor-help">
+                                    <div style={{ color: contrastColor1 }} className="text-sm font-mono font-medium leading-none cursor-help">
                                       {color1Passes
                                         ? (contrastCheck === 'aa' ? `${color1Contrast.toFixed(1)}:1` : `${color1Contrast.toFixed(0)}`)
                                         : 'n/a'}
@@ -4015,7 +4015,7 @@ export default function ColorScaleEditor() {
                                       : getAPCATooltipContent(color2Contrast, color2Name, theme))
                                     : getNATooltipContent(color2Contrast, color2Name, contrastCheck, theme)
                                   }>
-                                    <div style={{ color: contrastColor2 }} className="text-xs font-mono font-medium leading-none cursor-help">
+                                    <div style={{ color: contrastColor2 }} className="text-sm font-mono font-medium leading-none cursor-help">
                                       {color2Passes
                                         ? (contrastCheck === 'aa' ? `${color2Contrast.toFixed(1)}:1` : `${color2Contrast.toFixed(0)}`)
                                         : 'n/a'}
@@ -4028,7 +4028,7 @@ export default function ColorScaleEditor() {
                           </AnimatePresence>
                         </div>
                         {(viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
-                        <div className={`text-center text-xs font-dm-mono italic leading-tight ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
+                        <div className={`text-center text-sm font-dm-mono italic leading-tight ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
                           <div>{cs.hex.slice(1)}</div>
                           <div className="font-mono not-italic">L* {parseFloat(cs.lstar).toFixed(1)}</div>
                         </div>
@@ -4213,7 +4213,7 @@ export default function ColorScaleEditor() {
                   {/* Token Prefix and Key Color */}
                   <div className="mb-4 flex gap-4 items-start hidden">
                     <div>
-                      <label className={`block text-xs font-medium tracking-wider mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                      <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                         Token prefix
                       </label>
                       <input
@@ -4227,12 +4227,12 @@ export default function ColorScaleEditor() {
                             : 'bg-black border border-zinc-700 focus:border-zinc-600'
                         }`}
                       />
-                      <div className={`text-xs mt-1 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
+                      <div className={`text-sm mt-1 ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
                         Preview: {cs.isSingleColor ? cs.name : `${cs.name}-100, ${cs.name}-200, ...`}
                       </div>
                     </div>
                     <div>
-                      <label className={`block text-xs font-medium tracking-wider mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                      <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                         Key color
                       </label>
                       <div className="flex items-center gap-3">
@@ -4265,7 +4265,7 @@ export default function ColorScaleEditor() {
                               e.target.blur(); // Trigger onBlur validation
                             }
                           }}
-                          className={`w-20 px-2 py-1 rounded-md text-xs font-mono focus:outline-none focus:border-cyan-600 ${
+                          className={`w-20 px-2 py-1 rounded-md text-sm font-mono focus:outline-none focus:border-cyan-600 ${
                             theme === 'light'
                               ? 'bg-white border border-gray-300 text-gray-900'
                               : 'bg-black border border-zinc-700 text-gray-200'
@@ -4276,7 +4276,7 @@ export default function ColorScaleEditor() {
                           <div className="relative harmonize-dropdown-container">
                             <button
                               onClick={() => setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                              className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-800 rounded-md text-xs font-medium text-white transition-colors"
+                              className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-800 rounded-md text-sm font-medium text-white transition-colors"
                             >
                               Harmonize
                             </button>
@@ -4296,7 +4296,7 @@ export default function ColorScaleEditor() {
                                   ? 'bg-white border border-gray-300'
                                   : 'bg-zinc-800 border border-zinc-700'
                               }`}>
-                                <div className={`text-xs font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Harmonize with:</div>
+                                <div className={`text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Harmonize with:</div>
                                 <div className="space-y-1 max-h-[240px] overflow-y-auto">
                                   {colorScales
                                     .filter(otherCs => otherCs.id !== cs.id)
@@ -4314,14 +4314,14 @@ export default function ColorScaleEditor() {
                                           className={`w-4 h-4 rounded ${theme === 'light' ? 'border border-gray-400' : 'border border-zinc-600'}`}
                                           style={{ backgroundColor: otherCs.hex }}
                                         />
-                                        <span className={`text-xs ${theme === 'light' ? 'text-neutral-1100' : 'text-gray-200'}`}>{otherCs.name}</span>
+                                        <span className={`text-sm ${theme === 'light' ? 'text-neutral-1100' : 'text-gray-200'}`}>{otherCs.name}</span>
                                       </button>
                                     ))}
                                 </div>
                                 <div className={`mt-2 pt-2 ${theme === 'light' ? 'border-t border-gray-200' : 'border-t border-zinc-700'}`}>
                                   <button
                                     onClick={() => setHarmonizingScale(null)}
-                                    className={`w-full px-2 py-1 text-xs transition-colors ${
+                                    className={`w-full px-2 py-1 text-sm transition-colors ${
                                       theme === 'light'
                                         ? 'text-gray-600 hover:text-gray-900'
                                         : 'text-gray-400 hover:text-gray-200'
@@ -4469,7 +4469,7 @@ export default function ColorScaleEditor() {
             </p>
             <div className="flex flex-col gap-4">
               <div className="flex-1">
-                <label className={`font-jetbrains-mono block text-xs font-medium tracking-wider mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label className={`font-jetbrains-mono block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Select color families to generate
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -4525,7 +4525,7 @@ export default function ColorScaleEditor() {
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:self-end">
-                <label className={`font-jetbrains-mono block text-xs font-medium tracking-wider ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label className={`font-jetbrains-mono block text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Base color
                 </label>
                 <select
@@ -4559,7 +4559,7 @@ export default function ColorScaleEditor() {
                     onCheckedChange={setUseColorTheory}
                     size="1"
                   />
-                  <span className={`font-jetbrains-mono text-xs ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
+                  <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
                     {useColorTheory ? 'Color theory' : 'AI-based'}
                   </span>
                 </label>
@@ -4640,7 +4640,7 @@ export default function ColorScaleEditor() {
                   <div className="flex flex-col gap-6 mb-4">
                     {Object.entries(previewColorsByFamily).map(([family, options]) => (
                       <div key={family} className="flex flex-col gap-2">
-                        <div className={`font-jetbrains-mono text-xs font-medium uppercase tracking-wider capitalize ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
+                        <div className={`font-jetbrains-mono text-sm font-medium uppercase capitalize ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
                           {family}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -4679,7 +4679,7 @@ export default function ColorScaleEditor() {
                                       {method}
                                     </div>
                                   )}
-                                  <div className={`font-jetbrains-mono text-xs ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{hex}</div>
+                                  <div className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{hex}</div>
                                 </div>
                               </Tooltip>
                             );
@@ -4758,7 +4758,7 @@ export default function ColorScaleEditor() {
 
       {/* Credit text */}
       <div className="text-center py-8">
-        <p className={`text-xs ${theme === 'light' ? 'text-neutral-700' : 'text-gray-500'}`}>
+        <p className={`text-sm ${theme === 'light' ? 'text-neutral-800' : 'text-gray-400'}`}>
           Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan using Claude Code, React, and Radix.
         </p>
       </div>
