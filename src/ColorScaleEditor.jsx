@@ -3417,8 +3417,8 @@ export default function ColorScaleEditor() {
                     {/* Left controls - wrap on all screens */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                          Token
+                        <label className={`font-jetbrains-mono text-sm font-medium tracking-narrow ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                          Color label
                         </label>
                         <input
                           type="text"
@@ -3440,7 +3440,7 @@ export default function ColorScaleEditor() {
                       </div>
                       <div className="flex items-center gap-2">
                         <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                          Key
+                          Key color
                         </label>
                         <input
                           type="color"
@@ -3484,7 +3484,7 @@ export default function ColorScaleEditor() {
                             size="1"
                             data-checkbox-type="regular"
                           />
-                          <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Lock</span>
+                          <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Lock</span>
                         </label>
                       </Tooltip>
                       {!cs.isSingleColor && (
@@ -3496,19 +3496,21 @@ export default function ColorScaleEditor() {
                               size="1"
                               data-checkbox-type="regular"
                             />
-                            <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>W/B</span>
+                            <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>W/B</span>
                           </label>
                         </Tooltip>
                       )}
-                      <label className="flex items-center gap-1.5 cursor-pointer" title="Single color mode (hides scale controls)">
-                        <Checkbox
-                          checked={cs.isSingleColor}
-                          onCheckedChange={() => toggleSingleColorMode(cs.id)}
-                          size="1"
-                          data-checkbox-type="regular"
-                        />
-                        <span className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Single</span>
-                      </label>
+                      <Tooltip content="Single color mode (hides scale controls)">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <Checkbox
+                            checked={cs.isSingleColor}
+                            onCheckedChange={() => toggleSingleColorMode(cs.id)}
+                            size="1"
+                            data-checkbox-type="regular"
+                          />
+                          <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Single</span>
+                        </label>
+                      </Tooltip>
                       {!cs.isSingleColor && (
                         <div className="flex items-center gap-1">
                           <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
