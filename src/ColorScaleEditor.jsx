@@ -4,6 +4,7 @@ import { SegmentedControl, Theme, Switch, Tooltip, Checkbox, Button } from '@rad
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { howToUseMarkdown } from './howToUseContent';
+import { trackEvent } from './analytics';
 
 export default function ColorScaleEditor() {
   const canvasRef = useRef(null);
@@ -1580,8 +1581,14 @@ export default function ColorScaleEditor() {
   const generateHarmoniousColors = () => {
     if (useColorTheory) {
       generateHarmoniousColorsTheory();
+      trackEvent('Harmonious Colors Generated', {
+        source: 'local'
+      });
     } else {
       generateHarmoniousColorsAPI();
+      trackEvent('Harmonious Colors Generated', {
+        source: 'api'
+      });
     }
   };
 
@@ -1734,6 +1741,11 @@ export default function ColorScaleEditor() {
     const url = `${window.location.origin}${window.location.pathname}#${encoded}`;
     setShareUrl(url);
 
+    // Track analytics
+    trackEvent('Share URL Generated', {
+      scaleCount: colorScales.length
+    });
+
     // Copy to clipboard
     try {
       await navigator.clipboard.writeText(url);
@@ -1850,6 +1862,12 @@ export default function ColorScaleEditor() {
     setColorScales([...colorScales, newScale]);
     setNextColorId(nextColorId + 1);
 
+    // Track analytics
+    trackEvent('Color Scale Added', {
+      colorHex: hex,
+      scaleName: scaleName
+    });
+
     // Scroll to show the Add color scale button
     setTimeout(() => {
       addColorScaleButtonRef.current?.scrollIntoView({
@@ -1861,6 +1879,11 @@ export default function ColorScaleEditor() {
 
   const removeColorScale = (id) => {
     setColorScales(colorScales.filter(cs => cs.id !== id));
+
+    // Track analytics
+    trackEvent('Color Scale Removed', {
+      scaleId: id
+    });
 
     // Clean up semantic mappings that reference this scale
     setSemanticMappings(prev => {
@@ -1895,6 +1918,12 @@ export default function ColorScaleEditor() {
     const newScales = [...colorScales];
     [newScales[index], newScales[newIndex]] = [newScales[newIndex], newScales[index]];
     setColorScales(newScales);
+
+    // Track analytics
+    trackEvent('Color Scales Reordered', {
+      scaleId: id,
+      direction: direction
+    });
   };
 
   // Toggle single color mode for a scale
@@ -1936,12 +1965,40 @@ export default function ColorScaleEditor() {
 
       return { ...cs, hex, name: newName };
     }));
+
+    // Track analytics
+    trackEvent('Color Scale Updated', {
+      scaleId: id,
+      action: 'color_changed'
+    });
   };
 
   const updateColorScaleName = (id, name) => {
     setColorScales(colorScales.map(cs =>
       cs.id === id ? { ...cs, name } : cs
     ));
+
+    // Track analytics
+    trackEvent('Color Scale Updated', {
+      scaleId: id,
+      action: 'name_changed'
+    });
+  };
+
+  // Wrapper for setTheme with analytics
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    trackEvent('Theme Changed', {
+      theme: newTheme
+    });
+  };
+
+  // Wrapper for setViewMode with analytics
+  const handleViewModeChange = (newViewMode) => {
+    setViewMode(newViewMode);
+    trackEvent('View Mode Changed', {
+      viewMode: newViewMode
+    });
   };
 
   const toggleColorScaleSurface = (id) => {
@@ -2227,8 +2284,19 @@ export default function ColorScaleEditor() {
       // Add new scales to state
       setColorScales([...colorScales, ...newScales]);
 
+      // Track analytics
+      trackEvent('Figma Tokens Imported', {
+        scaleCount: newScales.length,
+        successful: true
+      });
+
     } catch (error) {
       console.error('Error importing Figma Tokens:', error);
+
+      // Track failed import
+      trackEvent('Figma Tokens Imported', {
+        successful: false
+      });
     }
   };
 
@@ -2592,6 +2660,12 @@ export default function ColorScaleEditor() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    // Track analytics
+    trackEvent('Exported to Figma', {
+      scaleCount: colorScales.length,
+      swatchCount: numSwatches
+    });
   };
 
   // Update semantic mapping for UI preview
@@ -3327,7 +3401,7 @@ export default function ColorScaleEditor() {
               <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Theme
               </label>
-              <SegmentedControl.Root value={theme} onValueChange={setTheme} size="1">
+              <SegmentedControl.Root value={theme} onValueChange={handleThemeChange} size="1">
                 <SegmentedControl.Item value="light">Light</SegmentedControl.Item>
                 <SegmentedControl.Item value="dark">Dark</SegmentedControl.Item>
               </SegmentedControl.Root>
@@ -3338,7 +3412,7 @@ export default function ColorScaleEditor() {
               <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 View
               </label>
-              <SegmentedControl.Root value={viewMode} onValueChange={setViewMode} size="1">
+              <SegmentedControl.Root value={viewMode} onValueChange={handleViewModeChange} size="1">
                 <SegmentedControl.Item value="default">Full</SegmentedControl.Item>
                 <SegmentedControl.Item value="simple">Minimal</SegmentedControl.Item>
               </SegmentedControl.Root>
