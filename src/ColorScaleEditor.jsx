@@ -74,6 +74,7 @@ export default function ColorScaleEditor() {
   const [showP3Warning, setShowP3Warning] = useState(false); // First-time P3 mode warning
   const [showHowToUse, setShowHowToUse] = useState(false); // Toggle "How to use" page
   const [showMobileMenu, setShowMobileMenu] = useState(false); // Toggle mobile menu
+  const [betaFeaturesEnabled, setBetaFeaturesEnabled] = useState(false); // Toggle beta features
 
   // UI Preview Dashboard State
   const [showUIPreview, setShowUIPreview] = useState(false); // Toggle UI preview panel visibility
@@ -3349,22 +3350,24 @@ export default function ColorScaleEditor() {
             </button>
           </Tooltip>
 
-          <Tooltip content="Preview UI with color scales">
-            <button
-              onClick={() => setShowUIPreview(!showUIPreview)}
-              className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
-                theme === 'light'
-                  ? 'bg-gray-100 text-neutral-900 border border-gray-300'
-                  : 'bg-gray-1300 text-gray-400 border border-gray-1100'
-              } ${showUIPreview ? 'ring-2 ring-offset-2 ring-neutral-900' : ''}`}
-              aria-label="Preview UI with color scales"
-              aria-pressed={showUIPreview}
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
-                dashboard
-              </span>
-            </button>
-          </Tooltip>
+          {betaFeaturesEnabled && (
+            <Tooltip content="Preview UI with color scales">
+              <button
+                onClick={() => setShowUIPreview(!showUIPreview)}
+                className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
+                  theme === 'light'
+                    ? 'bg-gray-100 text-neutral-900 border border-gray-300'
+                    : 'bg-gray-1300 text-gray-400 border border-gray-1100'
+                } ${showUIPreview ? 'ring-2 ring-offset-2 ring-neutral-900' : ''}`}
+                aria-label="Preview UI with color scales"
+                aria-pressed={showUIPreview}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                  dashboard
+                </span>
+              </button>
+            </Tooltip>
+          )}
 
           {showCopiedMessage && (
             <span className="text-sm text-emerald-500 font-medium animate-pulse">
@@ -3647,6 +3650,18 @@ export default function ColorScaleEditor() {
                 </div>
               </div>
             </div>
+
+            {/* Beta Features */}
+            <Tooltip content="Enable experimental features like UI Preview">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <Switch
+                  checked={betaFeaturesEnabled}
+                  onCheckedChange={(checked) => setBetaFeaturesEnabled(checked)}
+                  className="scale-75"
+                />
+                <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Beta features</span>
+              </label>
+            </Tooltip>
 
             {/* Advanced */}
             <label className="flex items-center gap-1.5 cursor-pointer">
