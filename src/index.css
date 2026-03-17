@@ -36,7 +36,7 @@ body {
 p {
   font-family: "JetBrains Mono", monospace;
   font-optical-sizing: auto;
-  font-weight: <weight>;
+  font-weight: weight;
   font-style: normal;
 }
 
@@ -127,7 +127,7 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 
 /* Primary Button (variant="solid") - Light mode */
 .radix-themes:not(.dark):not([class*="dark"]) button.rt-Button.cardboard-primary {
-  border: 2px solid #1c1c1c !important;
+  border: 2px solid #322f29 !important;
   border-radius: 2px !important;                     /* Crisp, not pill-shaped */
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4) !important;
   transition: transform 0.07s ease, box-shadow 0.07s ease !important;
@@ -154,7 +154,7 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 .radix-themes[class*="dark"] button.rt-Button.cardboard-primary,
 [data-is-root-theme="true"][data-appearance="dark"] button.rt-Button.cardboard-primary,
 .dark .radix-themes button.rt-Button.cardboard-primary {
-  border: 2px solid #0a0a0a !important;
+  border: 2px solid #322f29 !important;
   border-radius: 2px !important;
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.6) !important;
   transition: transform 0.07s ease, box-shadow 0.07s ease !important;
@@ -208,7 +208,7 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 
 /* Secondary Button - Light mode */
 .radix-themes:not(.dark):not([class*="dark"]) button.rt-Button.cardboard-secondary {
-  border: 1.5px solid #888888 !important;
+  border: 1.5px solid #a8a295 !important;
   border-radius: 2px !important;
   box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.25) !important;
   transition: transform 0.07s ease, box-shadow 0.07s ease !important;
@@ -235,7 +235,7 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 .radix-themes[class*="dark"] button.rt-Button.cardboard-secondary,
 [data-is-root-theme="true"][data-appearance="dark"] button.rt-Button.cardboard-secondary,
 .dark .radix-themes button.rt-Button.cardboard-secondary {
-  border: 1.5px solid #555555 !important;
+  border: 1.5px solid #5f594d !important;
   border-radius: 2px !important;
   box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5) !important;
   transition: transform 0.07s ease, box-shadow 0.07s ease !important;
@@ -397,22 +397,30 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 /* Input fields */
 .cardboard-input {
   border-radius: 2px !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
   box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.12) !important;
-  transition: box-shadow 0.07s ease !important;
+  transition: box-shadow 0.07s ease, border-color 0.07s ease !important;
+  background-color: white !important;
+  color: #1c1c1c !important;
 }
 
 .cardboard-input:focus {
+  border-color: rgba(0, 0, 0, 0.3) !important;
   box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Dark mode inputs */
 .dark .cardboard-input,
 [data-is-root-theme="true"][data-appearance="dark"] .cardboard-input {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3) !important;
+  background-color: black !important;
+  color: #e5e5e5 !important;
 }
 
 .dark .cardboard-input:focus,
 [data-is-root-theme="true"][data-appearance="dark"] .cardboard-input:focus {
+  border-color: rgba(255, 255, 255, 0.25) !important;
   box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -486,17 +494,79 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 }
 
 /* ============================================================
-   Segmented Control Styling - JetBrains Mono font
+   Segmented Control Styling - JetBrains Mono font + Cardboard border radius
    ============================================================ */
 
-/* Apply JetBrains Mono to all Segmented Control items */
-.rt-SegmentedControlRoot {
+/* Apply JetBrains Mono and cardboard border radius to Segmented Control */
+.rt-SegmentedControlRoot,
+.rt-SegmentedControlRoot *,
+.rt-SegmentedControlRoot::before,
+.rt-SegmentedControlRoot::after {
   font-family: 'JetBrains Mono', monospace !important;
+  border-radius: 2px !important;
 }
 
-.rt-SegmentedControlItem {
-  font-family: 'JetBrains Mono', monospace !important;
+/* Cardboard styling for segmented control container - Light mode */
+.rt-SegmentedControlRoot {
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Cardboard styling for segmented control container - Dark mode */
+.dark .rt-SegmentedControlRoot,
+[data-is-root-theme="true"][data-appearance="dark"] .rt-SegmentedControlRoot {
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.rt-SegmentedControlItem,
+.rt-SegmentedControlItem::before,
+.rt-SegmentedControlItem::after {
+  border-radius: 2px !important;
   font-weight: 500 !important;
+}
+
+/* Active/selected state - Light mode */
+.rt-SegmentedControlItem[data-state="active"],
+.rt-SegmentedControlItem[data-state="active"] *,
+.rt-SegmentedControlItem[data-state="active"]::before,
+.rt-SegmentedControlItem[data-state="active"]::after {
+  border-radius: 2px !important;
+}
+
+/* Active/selected state indicator - add subtle shadow - Light mode */
+.rt-SegmentedControlIndicator {
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Active/selected state indicator - Dark mode */
+.dark .rt-SegmentedControlIndicator,
+[data-is-root-theme="true"][data-appearance="dark"] .rt-SegmentedControlIndicator {
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Inactive state */
+.rt-SegmentedControlItem[data-state="inactive"],
+.rt-SegmentedControlItem[data-state="inactive"] *,
+.rt-SegmentedControlItem[data-state="inactive"]::before,
+.rt-SegmentedControlItem[data-state="inactive"]::after {
+  border-radius: 2px !important;
+}
+
+/* Indicator (sliding background) border radius */
+.rt-SegmentedControlIndicator,
+.rt-SegmentedControlIndicator *,
+.rt-SegmentedControlIndicator::before,
+.rt-SegmentedControlIndicator::after {
+  border-radius: 2px !important;
+}
+
+/* Target any button or label elements inside */
+.rt-SegmentedControlRoot button,
+.rt-SegmentedControlRoot label,
+.rt-SegmentedControlRoot span,
+.rt-SegmentedControlRoot div {
+  border-radius: 2px !important;
 }
 
 /* ============================================================
@@ -514,4 +584,99 @@ button.rt-CheckboxButton[data-state="unchecked"] {
 [data-is-root-theme="true"][data-appearance="dark"] ::selection {
   background-color: #3b82f6 !important;
   color: #ffffff !important;
+}
+
+/* ============================================================
+   Range Input Styling - Custom thumb colors for theme
+   ============================================================ */
+
+/* Webkit browsers (Chrome, Safari, Edge) - Light mode */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #000000;
+  cursor: pointer;
+  border: 2px solid #000000;
+}
+
+/* Webkit browsers - Dark mode */
+.dark input[type="range"]::-webkit-slider-thumb,
+[data-is-root-theme="true"][data-appearance="dark"] input[type="range"]::-webkit-slider-thumb {
+  background: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+/* Firefox - Light mode */
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #000000;
+  cursor: pointer;
+  border: 2px solid #000000;
+}
+
+/* Firefox - Dark mode */
+.dark input[type="range"]::-moz-range-thumb,
+[data-is-root-theme="true"][data-appearance="dark"] input[type="range"]::-moz-range-thumb {
+  background: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+/* ============================================================
+   Mobile Responsive Improvements
+   ============================================================ */
+
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Better touch targets for mobile */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ensure text inputs are at least 16px to prevent zoom on iOS */
+  input[type="text"],
+  input[type="number"] {
+    font-size: 16px !important;
+  }
+
+  /* Better spacing for mobile panels */
+  .cardboard-panel {
+    padding: 12px !important;
+  }
+
+  /* Adjust button text size on mobile */
+  .cardboard-primary,
+  .cardboard-secondary {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  /* Ensure swatches don't overflow */
+  .cardboard-swatch {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  /* Further reduce spacing */
+  .cardboard-panel {
+    padding: 8px !important;
+  }
+
+  /* Make icon buttons slightly smaller on very small screens */
+  .cardboard-icon-button {
+    width: 36px !important;
+    height: 36px !important;
+  }
 }

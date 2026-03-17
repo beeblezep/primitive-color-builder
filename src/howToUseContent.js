@@ -1,0 +1,30 @@
+// This file is auto-generated from how-to-use.md
+// To update the content, edit how-to-use.md in the root directory
+
+export const howToUseMarkdown = `
+
+## Understanding the Settings
+
+* The settings are configured to specific lightness values that reflect how we perceive color. This includes a gentle S-curve with more subtle differences at the light end and less subtle differences at the dark end, because we are more sensitive to lighter values than darker values. The total lightness is capped at 98 at the light end and 5 at the dark end to avoid an awkward jump between the last two swatches.
+* All of these settings are customizable for your particular use case.
+* L* represents lightness in the LAB color space, which is then translated to HEX and other color formats.
+* Use luminance mode to visually test value consistency across different hues and scales.
+* For certain colors, use a custom lightness range. For example, yellow works better with L*20-90.
+* Use hue shift for certain colors to avoid odd transitions. For example, yellows can shift brown in the darks.
+* Check text contrast using standard AA or the newer APCA (recommended).
+* The default numbering reflects lightness values, but you can choose sequential numbering instead. Lightness numbers reflect the general LAB-translated lightness value for that swatch.
+* The default swatch count is 12 which we feel covers the most use cases without feeling like too many. We started with a standard 10-step value scale but found we needed a bit more differentiation at the ends of the scale to support different surface types like containers and cards.
+
+## Tips
+
+* Start with gray and add a primary or brand color.
+* Then, do one of the following to start adding harmonious colors to your palette:
+    * Add another scale, edit the key color to your desired color, and click _Harmonize_
+    * Or, click _Add color families_
+* Handling gray:
+    * To include pure black and pure white, select the _W/B_ checkbox, which adds these to the scale. This is useful when using a semantic naming system like _neutral-100_. It's recommended to use sequential numbering with this method since the lightness token numbers are capped at 98 and 10.
+    * Alternatively, you can use a single swatch for each black and white.
+* Export your color scales to JSON format for use in other tools and design systems. You can also use the Figma plugin to import directly into your design files.
+* Import from JSON to load previously saved color scales or to restore your work across sessions.
+* Share your color scales with team members by copying the shareable link, which preserves all your settings and customizations.
+`;
