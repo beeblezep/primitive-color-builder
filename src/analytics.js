@@ -1,6 +1,24 @@
 import * as amplitude from '@amplitude/analytics-browser';
 
 /**
+ * Generate or retrieve persistent user ID from localStorage
+ * @returns {string} UUID v4 user ID
+ */
+function getUserId() {
+  let userId = localStorage.getItem('analytics_user_id');
+  if (!userId) {
+    // Generate UUID v4
+    userId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    localStorage.setItem('analytics_user_id', userId);
+  }
+  return userId;
+}
+
+/**
  * Initialize Amplitude analytics with the provided API key
  * @param {string} apiKey - Amplitude API key from environment variable
  */
@@ -10,11 +28,13 @@ export function initAnalytics(apiKey) {
     return;
   }
 
-  amplitude.init(apiKey, undefined, {
+  const userId = getUserId(); // Get persistent user ID
+
+  amplitude.init(apiKey, userId, {
     defaultTracking: false, // Disable automatic page view tracking for SPA
   });
 
-  console.log('Amplitude analytics initialized');
+  console.log('Amplitude analytics initialized with user ID:', userId);
 }
 
 /**

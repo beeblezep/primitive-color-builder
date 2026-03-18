@@ -1143,6 +1143,12 @@ export default function ColorScaleEditor() {
   };
 
   const handleCanvasMouseUp = () => {
+    if (dragging) {
+      trackEvent('Bezier Curve Modified', {
+        scope: 'global',
+        controlPoint: dragging
+      });
+    }
     setDragging(null);
   };
 
@@ -1173,6 +1179,10 @@ export default function ColorScaleEditor() {
     setViewMode('default');
     setDisplayMode('color');
     setGlobalGamut('srgb');
+
+    trackEvent('Reset All Settings', {
+      scaleCount: colorScales.length
+    });
   };
 
   // Drag-to-change number input handlers
@@ -1292,6 +1302,11 @@ export default function ColorScaleEditor() {
       return cs;
     }));
 
+    trackEvent('Harmonize Action', {
+      method: method,
+      scaleCount: colorScales.length
+    });
+
     setHarmonizingScale(null);
   };
 
@@ -1305,6 +1320,11 @@ export default function ColorScaleEditor() {
         ? { ...cs, hex: scale.preHarmonizeHex, preHarmonizeHex: null }
         : cs
     ));
+
+    trackEvent('Harmonize Reverted', {
+      scaleCount: colorScales.length
+    });
+
     setHarmonizingScale(null);
   };
 
@@ -1655,6 +1675,12 @@ export default function ColorScaleEditor() {
 
     setColorScales([...colorScales, ...newScales]);
     setNextColorId(nextColorId + newScales.length);
+
+    trackEvent('Preview Colors Applied', {
+      colorCount: selectedPreviews.size,
+      scaleCount: colorScales.length + newScales.length
+    });
+
     setPreviewColorsByFamily(null);
     setSelectedPreviews(new Set());
     setSelectedHarmoniousFamilies(new Set()); // Clear selected families
@@ -1675,6 +1701,10 @@ export default function ColorScaleEditor() {
       newSelected.delete(selectionKey);
     } else {
       newSelected.add(selectionKey);
+      trackEvent('Preview Colors Selected', {
+        family: family,
+        totalSelected: newSelected.size
+      });
     }
 
     setSelectedPreviews(newSelected);
@@ -2069,9 +2099,17 @@ export default function ColorScaleEditor() {
   };
 
   const toggleAdvancedSettings = (id) => {
+    const scale = colorScales.find(cs => cs.id === id);
+    const newValue = !scale.showAdvancedSettings;
+
     setColorScales(colorScales.map(cs =>
-      cs.id === id ? { ...cs, showAdvancedSettings: !cs.showAdvancedSettings } : cs
+      cs.id === id ? { ...cs, showAdvancedSettings: newValue } : cs
     ));
+
+    trackEvent('Advanced Settings Toggled', {
+      visible: newValue,
+      scaleCount: colorScales.length
+    });
   };
 
   const toggleIncludeAnchors = (id) => {
@@ -2476,6 +2514,12 @@ export default function ColorScaleEditor() {
   };
 
   const handleMiniCanvasMouseUp = () => {
+    if (miniCanvasDragging.id !== null) {
+      trackEvent('Bezier Curve Modified', {
+        scope: 'per-scale',
+        controlPoint: miniCanvasDragging.point
+      });
+    }
     setMiniCanvasDragging({ id: null, point: null });
   };
 
@@ -2864,6 +2908,11 @@ ${safelistPatterns}
       ...prev,
       [role]: scaleId
     }));
+
+    trackEvent('Semantic Mapping Updated', {
+      role: role,
+      assigned: scaleId !== null
+    });
   };
 
   // Generate color variables for UI preview dashboard
@@ -3604,7 +3653,11 @@ ${safelistPatterns}
           {betaFeaturesEnabled && (
             <Tooltip content="Preview UI with color scales">
               <button
-                onClick={() => setShowUIPreview(!showUIPreview)}
+                onClick={() => {
+                  const newValue = !showUIPreview;
+                  setShowUIPreview(newValue);
+                  trackEvent('UI Preview Toggled', { visible: newValue });
+                }}
                 className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
                   theme === 'light'
                     ? 'bg-gray-100 text-neutral-900 border border-gray-300'
@@ -3693,7 +3746,12 @@ ${safelistPatterns}
                   Text contrast
                 </label>
               </Tooltip>
-              <SegmentedControl.Root value={contrastCheck} onValueChange={setContrastCheck} size="1">
+              <SegmentedControl.Root value={contrastCheck} onValueChange={(value) => {
+                setContrastCheck(value);
+                if (value !== 'off') {
+                  trackEvent('Contrast Check Activated', { method: value });
+                }
+              }} size="1">
                 <SegmentedControl.Item value="off">Off</SegmentedControl.Item>
                 <SegmentedControl.Item value="aa">AA</SegmentedControl.Item>
                 <SegmentedControl.Item value="apca">APCA</SegmentedControl.Item>
@@ -3746,6 +3804,7 @@ ${safelistPatterns}
                 value={displayMode}
                 onValueChange={(value) => {
                   setDisplayMode(value);
+                  trackEvent('Display Mode Changed', { displayMode: value });
                   // Update desaturatedScales based on display mode
                   if (value === 'luminance') {
                     setDesaturatedScales(new Set(colorScales.map(cs => cs.id)));
@@ -3843,7 +3902,11 @@ ${safelistPatterns}
               <SegmentedControl.Root
                 value={useLightnessNumbering ? 'lightness' : 'sequential'}
                 onValueChange={(newValue) => {
-                  setUseLightnessNumbering(newValue === 'lightness');
+                  const isLightness = newValue === 'lightness';
+                  setUseLightnessNumbering(isLightness);
+                  trackEvent('Numbering Mode Changed', {
+                    mode: isLightness ? 'lightness' : 'sequential'
+                  });
                 }}
                 size="1"
               >
@@ -3918,7 +3981,10 @@ ${safelistPatterns}
             <label className="flex items-center gap-1.5 cursor-pointer">
               <Switch
                 checked={showVisualControls}
-                onCheckedChange={() => setShowVisualControls(!showVisualControls)}
+                onCheckedChange={(checked) => {
+                  setShowVisualControls(checked);
+                  trackEvent('Visual Controls Toggled', { visible: checked });
+                }}
                 className="scale-75"
               />
               <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
@@ -3945,7 +4011,10 @@ ${safelistPatterns}
                   <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
                     <SegmentedControl.Root
                       value={globalGamut}
-                      onValueChange={setGlobalGamut}
+                      onValueChange={(value) => {
+                        setGlobalGamut(value);
+                        trackEvent('Gamut Changed', { gamut: value });
+                      }}
                       size="1"
                     >
                       <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
@@ -4043,7 +4112,15 @@ ${safelistPatterns}
                   <input
                     type="number"
                     value={globalLstarMin}
-                    onChange={(e) => setGlobalLstarMin(Math.max(0, Math.min(95, parseInt(e.target.value) || 10)))}
+                    onChange={(e) => {
+                      const value = Math.max(0, Math.min(95, parseInt(e.target.value) || 10));
+                      setGlobalLstarMin(value);
+                      trackEvent('L* Range Modified', {
+                        scope: 'global',
+                        rangeType: 'min',
+                        value: Math.round(value)
+                      });
+                    }}
                     min="0"
                     max="95"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
@@ -4053,7 +4130,15 @@ ${safelistPatterns}
                   <input
                     type="number"
                     value={globalLstarMax}
-                    onChange={(e) => setGlobalLstarMax(Math.max(5, Math.min(100, parseInt(e.target.value) || 98)))}
+                    onChange={(e) => {
+                      const value = Math.max(5, Math.min(100, parseInt(e.target.value) || 98));
+                      setGlobalLstarMax(value);
+                      trackEvent('L* Range Modified', {
+                        scope: 'global',
+                        rangeType: 'max',
+                        value: Math.round(value)
+                      });
+                    }}
                     min="5"
                     max="100"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
