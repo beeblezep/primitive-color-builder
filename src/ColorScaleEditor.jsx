@@ -4,7 +4,7 @@ import { SegmentedControl, Theme, Switch, Tooltip, Checkbox, Button } from '@rad
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { howToUseMarkdown } from './howToUseContent';
-import { trackEvent } from './analytics';
+import { trackEvent, trackScreenView } from './analytics';
 
 export default function ColorScaleEditor() {
   const canvasRef = useRef(null);
@@ -75,6 +75,7 @@ export default function ColorScaleEditor() {
   const [showHowToUse, setShowHowToUse] = useState(false); // Toggle "How to use" page
   const [showMobileMenu, setShowMobileMenu] = useState(false); // Toggle mobile menu
   const [betaFeaturesEnabled, setBetaFeaturesEnabled] = useState(false); // Toggle beta features
+  const [showExportMenu, setShowExportMenu] = useState(false); // Toggle export dropdown menu
 
   // UI Preview Dashboard State
   const [showUIPreview, setShowUIPreview] = useState(false); // Toggle UI preview panel visibility
@@ -100,6 +101,15 @@ export default function ColorScaleEditor() {
     const supported = CSS.supports('color', 'color(display-p3 1 0 0)');
     setSupportsP3(supported);
   }, []);
+
+  // Track screen view changes between Main and How to Use
+  useEffect(() => {
+    if (showHowToUse) {
+      trackScreenView('How to Use');
+    } else {
+      trackScreenView('Main Screen');
+    }
+  }, [showHowToUse]);
 
   // Click-outside detection for minimal view expansion
   useEffect(() => {
@@ -2547,6 +2557,20 @@ export default function ColorScaleEditor() {
     }
   }, [showUIPreview]);
 
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportMenu && !event.target.closest('[aria-expanded="true"]') && !event.target.closest('button')) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showExportMenu]);
+
   // Export to Figma Tokens format
   const exportToFigmaTokens = () => {
     const tokens = {
@@ -2667,6 +2691,171 @@ export default function ColorScaleEditor() {
       scaleCount: colorScales.length,
       swatchCount: numSwatches
     });
+  };
+
+  // Export to Tailwind CSS configuration format
+  const exportToTailwind = async () => {
+    const colors = {};
+
+    // Process all color scales
+    colorScales.forEach(cs => {
+      const effectiveSwatchCount = getEffectiveSwatchCount(cs);
+
+      // Handle single colors
+      if (cs.isSingleColor) {
+        colors[cs.name] = cs.gamut === 'p3'
+          ? hexToP3CSS(cs.hex, 'p3')
+          : cs.hex;
+      } else {
+        // Regular scale generation (same logic as exportToFigmaTokens)
+        const tempSteps = effectiveSwatchCount + 2;
+        const values = [];
+
+        for (let i = 0; i < tempSteps; i++) {
+          let hex, lstar;
+
+          if (i === 0) {
+            hex = '#ffffff';
+            lstar = 100;
+          } else if (i === tempSteps - 1) {
+            hex = '#000000';
+            lstar = 0;
+          } else {
+            const t = i / (tempSteps - 1);
+            const easedT = cs.useCustomBezier
+              ? getBezierYWithPoints(t, cs.cp1, cs.cp2)
+              : getBezierY(t);
+            const lstarMin = (cs.useCustomLstarRange === true) ? cs.lstarMin : globalLstarMin;
+            const lstarMax = (cs.useCustomLstarRange === true) ? cs.lstarMax : globalLstarMax;
+            lstar = lstarMax - easedT * (lstarMax - lstarMin);
+            hex = getColorAtLightness(cs.hex, lstar, lstarMin, lstarMax, cs.saturationMin, cs.saturationMax, cs.hueShiftDark, cs.hueShiftLight);
+          }
+
+          const step = (i + 1) * 100;
+          values.push({ step, hex, lstar: lstar.toFixed(1) });
+        }
+
+        let scale = values;
+        const keyColorIndex = findKeyColorIndex(scale, cs.hex);
+
+        if (cs.lockKeyColor && keyColorIndex >= 0) {
+          scale[keyColorIndex] = {
+            ...scale[keyColorIndex],
+            hex: cs.hex
+          };
+        }
+
+        // Apply numbering
+        scale = (() => {
+          const sliced = cs.includeAnchors ? scale : scale.slice(1, -1);
+          const lstarValues = sliced.map(s => s.lstar);
+          const lstarMin = (cs.useCustomLstarRange === true) ? cs.lstarMin : globalLstarMin;
+          const lstarMax = (cs.useCustomLstarRange === true) ? cs.lstarMax : globalLstarMax;
+          const increment = useCustomIncrement ? customIncrement : 100;
+          const steps = calculateStepFromLstar(lstarValues, useLightnessNumbering, lstarMin, lstarMax, increment, reverseSequentialNumbering);
+          return sliced.map((swatch, i) => ({ ...swatch, step: steps[i] }));
+        })();
+
+        // Apply custom swatches
+        scale.forEach((swatch, i) => {
+          if (cs.customSwatches[swatch.step]) {
+            scale[i] = {
+              ...swatch,
+              hex: cs.customSwatches[swatch.step],
+              isCustom: true
+            };
+          }
+        });
+
+        // Build color object for this scale
+        colors[cs.name] = {};
+        scale.forEach(swatch => {
+          const colorValue = cs.gamut === 'p3'
+            ? hexToP3CSS(swatch.hex, 'p3')
+            : swatch.hex;
+          colors[cs.name][swatch.step] = colorValue;
+        });
+      }
+    });
+
+    // Add semantic mappings
+    const semanticColors = {};
+    Object.entries(semanticMappings).forEach(([role, scaleId]) => {
+      if (scaleId !== null) {
+        const colorScale = colorScales.find(cs => cs.id === scaleId);
+        if (colorScale && colors[colorScale.name]) {
+          semanticColors[role] = colors[colorScale.name];
+        }
+      }
+    });
+
+    // Merge semantic colors into main colors object
+    Object.assign(colors, semanticColors);
+
+    // Detect if any scales have extended values (1000-1300)
+    const extendedScaleNames = [];
+    colorScales.forEach(cs => {
+      if (!cs.isSingleColor && colors[cs.name] && typeof colors[cs.name] === 'object') {
+        const steps = Object.keys(colors[cs.name]).map(Number);
+        if (steps.some(step => step >= 1000)) {
+          extendedScaleNames.push(cs.name);
+        }
+      }
+    });
+
+    const hasExtendedScales = extendedScaleNames.length > 0;
+
+    // Generate safelist patterns for extended scales
+    const safelistPatterns = extendedScaleNames.map(name =>
+      `    {\n      pattern: /^(bg|text|border)-${name}-(1000|1100|1200|1300)$/,\n    }`
+    ).join(',\n');
+
+    // Generate the Tailwind config snippet
+    const colorsJson = JSON.stringify(colors, null, 8);
+    const colorsJs = colorsJson.replace(/"([^"]+)":/g, '$1:');
+
+    const configSnippet = `// Tailwind CSS Configuration
+// Generated by Color Scale Editor
+// https://colorscales.app
+
+module.exports = {
+  theme: {
+    extend: {
+      colors: ${colorsJs},
+    },
+  },${hasExtendedScales ? `
+  // Safelist patterns for extended color scales (1000-1300)
+  safelist: [
+${safelistPatterns}
+  ],` : ''}
+}
+
+// Usage:
+// - Import this config into your tailwind.config.js
+// - Or copy the colors object into your existing config
+// - Color classes: bg-{color}-{number}, text-{color}-{number}, etc.${hasExtendedScales ? '\n// - Extended scales (1000-1300) are safelisted for use' : ''}`;
+
+    // Download file
+    const blob = new Blob([configSnippet], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'tailwind.config.js';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Track analytics
+    trackEvent('Exported to Tailwind', {
+      scaleCount: colorScales.length,
+      swatchCount: numSwatches,
+      hasSemanticMappings: Object.values(semanticMappings).some(v => v !== null),
+      hasExtendedScales
+    });
+
+    // Close the dropdown
+    setShowExportMenu(false);
   };
 
   // Update semantic mapping for UI preview
@@ -3318,21 +3507,83 @@ export default function ColorScaleEditor() {
             </button>
           </Tooltip>
 
-          <Tooltip content="Export as Figma Tokens JSON">
-            <button
-              onClick={exportToFigmaTokens}
-              className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
-                theme === 'light'
-                  ? 'bg-gray-100 text-neutral-900 border border-gray-300'
-                  : 'bg-gray-1300 text-gray-400 border border-gray-1100'
-              }`}
-              aria-label="Export as Figma Tokens JSON"
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
-                download
-              </span>
-            </button>
-          </Tooltip>
+          {/* Export Dropdown Menu */}
+          <div style={{ position: 'relative' }}>
+            <Tooltip content="Export color scales">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
+                  theme === 'light'
+                    ? 'bg-gray-100 text-neutral-900 border border-gray-300'
+                    : 'bg-gray-1300 text-gray-400 border border-gray-1100'
+                }`}
+                aria-label="Export color scales"
+                aria-expanded={showExportMenu}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                  download
+                </span>
+              </button>
+            </Tooltip>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {showExportMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    right: 0,
+                    zIndex: 50,
+                    minWidth: '200px'
+                  }}
+                  className={`rounded-lg shadow-lg overflow-hidden ${
+                    theme === 'light'
+                      ? 'bg-white border border-gray-300'
+                      : 'bg-gray-1200 border border-gray-1000'
+                  }`}
+                >
+                  <button
+                    onClick={exportToFigmaTokens}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-neutral-900 hover:bg-gray-100'
+                        : 'text-gray-300 hover:bg-gray-1100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        file_download
+                      </span>
+                      <span>Figma Tokens JSON</span>
+                    </div>
+                  </button>
+
+                  <div className={`h-px ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-1000'}`}></div>
+
+                  <button
+                    onClick={exportToTailwind}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-neutral-900 hover:bg-gray-100'
+                        : 'text-gray-300 hover:bg-gray-1100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        code
+                      </span>
+                      <span>Tailwind Config</span>
+                    </div>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <Tooltip content="Copy shareable URL to clipboard">
             <button

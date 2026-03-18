@@ -57,3 +57,15 @@ export function setUserProperties(properties) {
     console.error('Analytics user properties error:', error);
   }
 }
+
+/**
+ * Track screen view events
+ * @param {string} screenName - Name of the screen being viewed
+ * @param {Object} [properties] - Optional additional properties
+ */
+export function trackScreenView(screenName, properties = {}) {
+  trackEvent('Screen Viewed', {
+    screen_name: screenName,
+    ...properties
+  });
+}
