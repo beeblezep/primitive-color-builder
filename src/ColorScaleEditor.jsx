@@ -4,7 +4,7 @@ import { SegmentedControl, Theme, Switch, Tooltip, Checkbox, Button } from '@rad
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { howToUseMarkdown } from './howToUseContent';
-import { trackEvent } from './analytics';
+import { trackEvent, trackScreenView } from './analytics';
 
 export default function ColorScaleEditor() {
   const canvasRef = useRef(null);
@@ -75,6 +75,7 @@ export default function ColorScaleEditor() {
   const [showHowToUse, setShowHowToUse] = useState(false); // Toggle "How to use" page
   const [showMobileMenu, setShowMobileMenu] = useState(false); // Toggle mobile menu
   const [betaFeaturesEnabled, setBetaFeaturesEnabled] = useState(false); // Toggle beta features
+  const [showExportMenu, setShowExportMenu] = useState(false); // Toggle export dropdown menu
 
   // UI Preview Dashboard State
   const [showUIPreview, setShowUIPreview] = useState(false); // Toggle UI preview panel visibility
@@ -100,6 +101,15 @@ export default function ColorScaleEditor() {
     const supported = CSS.supports('color', 'color(display-p3 1 0 0)');
     setSupportsP3(supported);
   }, []);
+
+  // Track screen view changes between Main and How to Use
+  useEffect(() => {
+    if (showHowToUse) {
+      trackScreenView('How to Use');
+    } else {
+      trackScreenView('Main Screen');
+    }
+  }, [showHowToUse]);
 
   // Click-outside detection for minimal view expansion
   useEffect(() => {
@@ -1133,6 +1143,12 @@ export default function ColorScaleEditor() {
   };
 
   const handleCanvasMouseUp = () => {
+    if (dragging) {
+      trackEvent('Bezier Curve Modified', {
+        scope: 'global',
+        controlPoint: dragging
+      });
+    }
     setDragging(null);
   };
 
@@ -1163,6 +1179,10 @@ export default function ColorScaleEditor() {
     setViewMode('default');
     setDisplayMode('color');
     setGlobalGamut('srgb');
+
+    trackEvent('Reset All Settings', {
+      scaleCount: colorScales.length
+    });
   };
 
   // Drag-to-change number input handlers
@@ -1282,6 +1302,11 @@ export default function ColorScaleEditor() {
       return cs;
     }));
 
+    trackEvent('Harmonize Action', {
+      method: method,
+      scaleCount: colorScales.length
+    });
+
     setHarmonizingScale(null);
   };
 
@@ -1295,6 +1320,11 @@ export default function ColorScaleEditor() {
         ? { ...cs, hex: scale.preHarmonizeHex, preHarmonizeHex: null }
         : cs
     ));
+
+    trackEvent('Harmonize Reverted', {
+      scaleCount: colorScales.length
+    });
+
     setHarmonizingScale(null);
   };
 
@@ -1645,6 +1675,12 @@ export default function ColorScaleEditor() {
 
     setColorScales([...colorScales, ...newScales]);
     setNextColorId(nextColorId + newScales.length);
+
+    trackEvent('Preview Colors Applied', {
+      colorCount: selectedPreviews.size,
+      scaleCount: colorScales.length + newScales.length
+    });
+
     setPreviewColorsByFamily(null);
     setSelectedPreviews(new Set());
     setSelectedHarmoniousFamilies(new Set()); // Clear selected families
@@ -1665,6 +1701,10 @@ export default function ColorScaleEditor() {
       newSelected.delete(selectionKey);
     } else {
       newSelected.add(selectionKey);
+      trackEvent('Preview Colors Selected', {
+        family: family,
+        totalSelected: newSelected.size
+      });
     }
 
     setSelectedPreviews(newSelected);
@@ -2059,9 +2099,17 @@ export default function ColorScaleEditor() {
   };
 
   const toggleAdvancedSettings = (id) => {
+    const scale = colorScales.find(cs => cs.id === id);
+    const newValue = !scale.showAdvancedSettings;
+
     setColorScales(colorScales.map(cs =>
-      cs.id === id ? { ...cs, showAdvancedSettings: !cs.showAdvancedSettings } : cs
+      cs.id === id ? { ...cs, showAdvancedSettings: newValue } : cs
     ));
+
+    trackEvent('Advanced Settings Toggled', {
+      visible: newValue,
+      scaleCount: colorScales.length
+    });
   };
 
   const toggleIncludeAnchors = (id) => {
@@ -2466,6 +2514,12 @@ export default function ColorScaleEditor() {
   };
 
   const handleMiniCanvasMouseUp = () => {
+    if (miniCanvasDragging.id !== null) {
+      trackEvent('Bezier Curve Modified', {
+        scope: 'per-scale',
+        controlPoint: miniCanvasDragging.point
+      });
+    }
     setMiniCanvasDragging({ id: null, point: null });
   };
 
@@ -2546,6 +2600,20 @@ export default function ColorScaleEditor() {
       }, 350); // Delay to allow animation to start
     }
   }, [showUIPreview]);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportMenu && !event.target.closest('[aria-expanded="true"]') && !event.target.closest('button')) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showExportMenu]);
 
   // Export to Figma Tokens format
   const exportToFigmaTokens = () => {
@@ -2669,12 +2737,182 @@ export default function ColorScaleEditor() {
     });
   };
 
+  // Export to Tailwind CSS configuration format
+  const exportToTailwind = async () => {
+    const colors = {};
+
+    // Process all color scales
+    colorScales.forEach(cs => {
+      const effectiveSwatchCount = getEffectiveSwatchCount(cs);
+
+      // Handle single colors
+      if (cs.isSingleColor) {
+        colors[cs.name] = cs.gamut === 'p3'
+          ? hexToP3CSS(cs.hex, 'p3')
+          : cs.hex;
+      } else {
+        // Regular scale generation (same logic as exportToFigmaTokens)
+        const tempSteps = effectiveSwatchCount + 2;
+        const values = [];
+
+        for (let i = 0; i < tempSteps; i++) {
+          let hex, lstar;
+
+          if (i === 0) {
+            hex = '#ffffff';
+            lstar = 100;
+          } else if (i === tempSteps - 1) {
+            hex = '#000000';
+            lstar = 0;
+          } else {
+            const t = i / (tempSteps - 1);
+            const easedT = cs.useCustomBezier
+              ? getBezierYWithPoints(t, cs.cp1, cs.cp2)
+              : getBezierY(t);
+            const lstarMin = (cs.useCustomLstarRange === true) ? cs.lstarMin : globalLstarMin;
+            const lstarMax = (cs.useCustomLstarRange === true) ? cs.lstarMax : globalLstarMax;
+            lstar = lstarMax - easedT * (lstarMax - lstarMin);
+            hex = getColorAtLightness(cs.hex, lstar, lstarMin, lstarMax, cs.saturationMin, cs.saturationMax, cs.hueShiftDark, cs.hueShiftLight);
+          }
+
+          const step = (i + 1) * 100;
+          values.push({ step, hex, lstar: lstar.toFixed(1) });
+        }
+
+        let scale = values;
+        const keyColorIndex = findKeyColorIndex(scale, cs.hex);
+
+        if (cs.lockKeyColor && keyColorIndex >= 0) {
+          scale[keyColorIndex] = {
+            ...scale[keyColorIndex],
+            hex: cs.hex
+          };
+        }
+
+        // Apply numbering
+        scale = (() => {
+          const sliced = cs.includeAnchors ? scale : scale.slice(1, -1);
+          const lstarValues = sliced.map(s => s.lstar);
+          const lstarMin = (cs.useCustomLstarRange === true) ? cs.lstarMin : globalLstarMin;
+          const lstarMax = (cs.useCustomLstarRange === true) ? cs.lstarMax : globalLstarMax;
+          const increment = useCustomIncrement ? customIncrement : 100;
+          const steps = calculateStepFromLstar(lstarValues, useLightnessNumbering, lstarMin, lstarMax, increment, reverseSequentialNumbering);
+          return sliced.map((swatch, i) => ({ ...swatch, step: steps[i] }));
+        })();
+
+        // Apply custom swatches
+        scale.forEach((swatch, i) => {
+          if (cs.customSwatches[swatch.step]) {
+            scale[i] = {
+              ...swatch,
+              hex: cs.customSwatches[swatch.step],
+              isCustom: true
+            };
+          }
+        });
+
+        // Build color object for this scale
+        colors[cs.name] = {};
+        scale.forEach(swatch => {
+          const colorValue = cs.gamut === 'p3'
+            ? hexToP3CSS(swatch.hex, 'p3')
+            : swatch.hex;
+          colors[cs.name][swatch.step] = colorValue;
+        });
+      }
+    });
+
+    // Add semantic mappings
+    const semanticColors = {};
+    Object.entries(semanticMappings).forEach(([role, scaleId]) => {
+      if (scaleId !== null) {
+        const colorScale = colorScales.find(cs => cs.id === scaleId);
+        if (colorScale && colors[colorScale.name]) {
+          semanticColors[role] = colors[colorScale.name];
+        }
+      }
+    });
+
+    // Merge semantic colors into main colors object
+    Object.assign(colors, semanticColors);
+
+    // Detect if any scales have extended values (1000-1300)
+    const extendedScaleNames = [];
+    colorScales.forEach(cs => {
+      if (!cs.isSingleColor && colors[cs.name] && typeof colors[cs.name] === 'object') {
+        const steps = Object.keys(colors[cs.name]).map(Number);
+        if (steps.some(step => step >= 1000)) {
+          extendedScaleNames.push(cs.name);
+        }
+      }
+    });
+
+    const hasExtendedScales = extendedScaleNames.length > 0;
+
+    // Generate safelist patterns for extended scales
+    const safelistPatterns = extendedScaleNames.map(name =>
+      `    {\n      pattern: /^(bg|text|border)-${name}-(1000|1100|1200|1300)$/,\n    }`
+    ).join(',\n');
+
+    // Generate the Tailwind config snippet
+    const colorsJson = JSON.stringify(colors, null, 8);
+    const colorsJs = colorsJson.replace(/"([^"]+)":/g, '$1:');
+
+    const configSnippet = `// Tailwind CSS Configuration
+// Generated by Color Scale Editor
+// https://colorscales.app
+
+module.exports = {
+  theme: {
+    extend: {
+      colors: ${colorsJs},
+    },
+  },${hasExtendedScales ? `
+  // Safelist patterns for extended color scales (1000-1300)
+  safelist: [
+${safelistPatterns}
+  ],` : ''}
+}
+
+// Usage:
+// - Import this config into your tailwind.config.js
+// - Or copy the colors object into your existing config
+// - Color classes: bg-{color}-{number}, text-{color}-{number}, etc.${hasExtendedScales ? '\n// - Extended scales (1000-1300) are safelisted for use' : ''}`;
+
+    // Download file
+    const blob = new Blob([configSnippet], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'tailwind.config.js';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Track analytics
+    trackEvent('Exported to Tailwind', {
+      scaleCount: colorScales.length,
+      swatchCount: numSwatches,
+      hasSemanticMappings: Object.values(semanticMappings).some(v => v !== null),
+      hasExtendedScales
+    });
+
+    // Close the dropdown
+    setShowExportMenu(false);
+  };
+
   // Update semantic mapping for UI preview
   const updateSemanticMapping = (role, scaleId) => {
     setSemanticMappings(prev => ({
       ...prev,
       [role]: scaleId
     }));
+
+    trackEvent('Semantic Mapping Updated', {
+      role: role,
+      assigned: scaleId !== null
+    });
   };
 
   // Generate color variables for UI preview dashboard
@@ -3318,21 +3556,83 @@ export default function ColorScaleEditor() {
             </button>
           </Tooltip>
 
-          <Tooltip content="Export as Figma Tokens JSON">
-            <button
-              onClick={exportToFigmaTokens}
-              className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
-                theme === 'light'
-                  ? 'bg-gray-100 text-neutral-900 border border-gray-300'
-                  : 'bg-gray-1300 text-gray-400 border border-gray-1100'
-              }`}
-              aria-label="Export as Figma Tokens JSON"
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
-                download
-              </span>
-            </button>
-          </Tooltip>
+          {/* Export Dropdown Menu */}
+          <div style={{ position: 'relative' }}>
+            <Tooltip content="Export color scales">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
+                  theme === 'light'
+                    ? 'bg-gray-100 text-neutral-900 border border-gray-300'
+                    : 'bg-gray-1300 text-gray-400 border border-gray-1100'
+                }`}
+                aria-label="Export color scales"
+                aria-expanded={showExportMenu}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                  download
+                </span>
+              </button>
+            </Tooltip>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {showExportMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    right: 0,
+                    zIndex: 50,
+                    minWidth: '200px'
+                  }}
+                  className={`rounded-lg shadow-lg overflow-hidden ${
+                    theme === 'light'
+                      ? 'bg-white border border-gray-300'
+                      : 'bg-gray-1200 border border-gray-1000'
+                  }`}
+                >
+                  <button
+                    onClick={exportToFigmaTokens}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-neutral-900 hover:bg-gray-100'
+                        : 'text-gray-300 hover:bg-gray-1100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        file_download
+                      </span>
+                      <span>Figma Tokens JSON</span>
+                    </div>
+                  </button>
+
+                  <div className={`h-px ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-1000'}`}></div>
+
+                  <button
+                    onClick={exportToTailwind}
+                    className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                      theme === 'light'
+                        ? 'text-neutral-900 hover:bg-gray-100'
+                        : 'text-gray-300 hover:bg-gray-1100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        code
+                      </span>
+                      <span>Tailwind Config</span>
+                    </div>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <Tooltip content="Copy shareable URL to clipboard">
             <button
@@ -3353,7 +3653,11 @@ export default function ColorScaleEditor() {
           {betaFeaturesEnabled && (
             <Tooltip content="Preview UI with color scales">
               <button
-                onClick={() => setShowUIPreview(!showUIPreview)}
+                onClick={() => {
+                  const newValue = !showUIPreview;
+                  setShowUIPreview(newValue);
+                  trackEvent('UI Preview Toggled', { visible: newValue });
+                }}
                 className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
                   theme === 'light'
                     ? 'bg-gray-100 text-neutral-900 border border-gray-300'
@@ -3442,7 +3746,12 @@ export default function ColorScaleEditor() {
                   Text contrast
                 </label>
               </Tooltip>
-              <SegmentedControl.Root value={contrastCheck} onValueChange={setContrastCheck} size="1">
+              <SegmentedControl.Root value={contrastCheck} onValueChange={(value) => {
+                setContrastCheck(value);
+                if (value !== 'off') {
+                  trackEvent('Contrast Check Activated', { method: value });
+                }
+              }} size="1">
                 <SegmentedControl.Item value="off">Off</SegmentedControl.Item>
                 <SegmentedControl.Item value="aa">AA</SegmentedControl.Item>
                 <SegmentedControl.Item value="apca">APCA</SegmentedControl.Item>
@@ -3495,6 +3804,7 @@ export default function ColorScaleEditor() {
                 value={displayMode}
                 onValueChange={(value) => {
                   setDisplayMode(value);
+                  trackEvent('Display Mode Changed', { displayMode: value });
                   // Update desaturatedScales based on display mode
                   if (value === 'luminance') {
                     setDesaturatedScales(new Set(colorScales.map(cs => cs.id)));
@@ -3592,7 +3902,11 @@ export default function ColorScaleEditor() {
               <SegmentedControl.Root
                 value={useLightnessNumbering ? 'lightness' : 'sequential'}
                 onValueChange={(newValue) => {
-                  setUseLightnessNumbering(newValue === 'lightness');
+                  const isLightness = newValue === 'lightness';
+                  setUseLightnessNumbering(isLightness);
+                  trackEvent('Numbering Mode Changed', {
+                    mode: isLightness ? 'lightness' : 'sequential'
+                  });
                 }}
                 size="1"
               >
@@ -3667,7 +3981,10 @@ export default function ColorScaleEditor() {
             <label className="flex items-center gap-1.5 cursor-pointer">
               <Switch
                 checked={showVisualControls}
-                onCheckedChange={() => setShowVisualControls(!showVisualControls)}
+                onCheckedChange={(checked) => {
+                  setShowVisualControls(checked);
+                  trackEvent('Visual Controls Toggled', { visible: checked });
+                }}
                 className="scale-75"
               />
               <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
@@ -3694,7 +4011,10 @@ export default function ColorScaleEditor() {
                   <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
                     <SegmentedControl.Root
                       value={globalGamut}
-                      onValueChange={setGlobalGamut}
+                      onValueChange={(value) => {
+                        setGlobalGamut(value);
+                        trackEvent('Gamut Changed', { gamut: value });
+                      }}
                       size="1"
                     >
                       <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
@@ -3792,7 +4112,15 @@ export default function ColorScaleEditor() {
                   <input
                     type="number"
                     value={globalLstarMin}
-                    onChange={(e) => setGlobalLstarMin(Math.max(0, Math.min(95, parseInt(e.target.value) || 10)))}
+                    onChange={(e) => {
+                      const value = Math.max(0, Math.min(95, parseInt(e.target.value) || 10));
+                      setGlobalLstarMin(value);
+                      trackEvent('L* Range Modified', {
+                        scope: 'global',
+                        rangeType: 'min',
+                        value: Math.round(value)
+                      });
+                    }}
                     min="0"
                     max="95"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
@@ -3802,7 +4130,15 @@ export default function ColorScaleEditor() {
                   <input
                     type="number"
                     value={globalLstarMax}
-                    onChange={(e) => setGlobalLstarMax(Math.max(5, Math.min(100, parseInt(e.target.value) || 98)))}
+                    onChange={(e) => {
+                      const value = Math.max(5, Math.min(100, parseInt(e.target.value) || 98));
+                      setGlobalLstarMax(value);
+                      trackEvent('L* Range Modified', {
+                        scope: 'global',
+                        rangeType: 'max',
+                        value: Math.round(value)
+                      });
+                    }}
                     min="5"
                     max="100"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
