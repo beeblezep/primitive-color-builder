@@ -3965,18 +3965,6 @@ ${safelistPatterns}
               </div>
             </div>
 
-            {/* Beta Features */}
-            <Tooltip content="Enable experimental features like UI Preview">
-              <label className="flex items-center gap-1.5 cursor-pointer">
-                <Switch
-                  checked={betaFeaturesEnabled}
-                  onCheckedChange={(checked) => setBetaFeaturesEnabled(checked)}
-                  className="scale-75"
-                />
-                <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Beta features</span>
-              </label>
-            </Tooltip>
-
             {/* Advanced */}
             <label className="flex items-center gap-1.5 cursor-pointer">
               <Switch
@@ -4002,36 +3990,50 @@ ${safelistPatterns}
             }}
           >
             <div className="pt-6 space-y-6">
+              {/* Beta Features */}
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <Switch
+                  checked={betaFeaturesEnabled}
+                  onCheckedChange={(checked) => setBetaFeaturesEnabled(checked)}
+                  className="scale-75"
+                />
+                <Tooltip content="Enable experimental features like UI Preview">
+                  <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Beta features</span>
+                </Tooltip>
+              </label>
+
               {/* Color Space Toggle (beta) */}
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                    Color space (beta)
-                  </label>
-                  <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
-                    <SegmentedControl.Root
-                      value={globalGamut}
-                      onValueChange={(value) => {
-                        setGlobalGamut(value);
-                        trackEvent('Gamut Changed', { gamut: value });
-                      }}
-                      size="1"
-                    >
-                      <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
-                      <SegmentedControl.Item value="p3">
-                        Display P3
-                        {!supportsP3 && <span className="text-sm opacity-50 ml-1">(unsupported)</span>}
-                      </SegmentedControl.Item>
-                    </SegmentedControl.Root>
-                  </Tooltip>
-                </div>
-                {/* P3 Browser Warning */}
-                {globalGamut === 'p3' && !supportsP3 && (
-                  <div className={`px-3 py-2 rounded text-sm ${theme === 'light' ? 'bg-orange-100 text-orange-900' : 'bg-orange-900/30 text-orange-300'}`}>
-                    ⚠ Display P3 not supported in this browser. Colors shown in sRGB.
+              {betaFeaturesEnabled && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                      Color space (beta)
+                    </label>
+                    <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
+                      <SegmentedControl.Root
+                        value={globalGamut}
+                        onValueChange={(value) => {
+                          setGlobalGamut(value);
+                          trackEvent('Gamut Changed', { gamut: value });
+                        }}
+                        size="1"
+                      >
+                        <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
+                        <SegmentedControl.Item value="p3">
+                          Display P3
+                          {!supportsP3 && <span className="text-sm opacity-50 ml-1">(unsupported)</span>}
+                        </SegmentedControl.Item>
+                      </SegmentedControl.Root>
+                    </Tooltip>
                   </div>
-                )}
-              </div>
+                  {/* P3 Browser Warning */}
+                  {globalGamut === 'p3' && !supportsP3 && (
+                    <div className={`px-3 py-2 rounded text-sm ${theme === 'light' ? 'bg-orange-100 text-orange-900' : 'bg-orange-900/30 text-orange-300'}`}>
+                      ⚠ Display P3 not supported in this browser. Colors shown in sRGB.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* P1, P2, L* Range - Horizontal Layout */}
               <div className="flex items-center gap-4">
