@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motionPresets } from './motionTokens';
 import { SegmentedControl, Theme, Switch, Tooltip, Checkbox, Button } from '@radix-ui/themes';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import { howToUseMarkdown } from './howToUseContent';
-import { trackEvent, trackScreenView } from './analytics';
+import { trackEvent } from './analytics';
+import { ResizeDivider } from './components/ResizeDivider';
+import { HelpPanelContent } from './components/HelpPanelContent';
 
 export default function ColorScaleEditor() {
   const canvasRef = useRef(null);
@@ -72,7 +72,26 @@ export default function ColorScaleEditor() {
   const [globalGamut, setGlobalGamut] = useState('srgb'); // Color space: 'srgb' or 'p3'
   const [supportsP3, setSupportsP3] = useState(false); // Browser P3 capability detection
   const [showP3Warning, setShowP3Warning] = useState(false); // First-time P3 mode warning
-  const [showHowToUse, setShowHowToUse] = useState(false); // Toggle "How to use" page
+  // Help panel state with localStorage persistence
+  const [helpPanelState, setHelpPanelState] = useState(() => {
+    const stored = localStorage.getItem('color-scale-editor-help-panel');
+    const defaults = { isOpen: false, position: 'bottom', width: 450, height: 300 };
+
+    if (!stored) return defaults;
+
+    try {
+      const parsed = JSON.parse(stored);
+      return {
+        isOpen: Boolean(parsed.isOpen),
+        position: ['bottom', 'side'].includes(parsed.position) ? parsed.position : 'bottom',
+        width: Math.min(800, Math.max(320, parsed.width || 450)),
+        height: Math.min(600, Math.max(200, parsed.height || 300))
+      };
+    } catch {
+      return defaults;
+    }
+  });
+  const [isPanelMounted, setIsPanelMounted] = useState(false); // Controls grid layout during animations
   const [showMobileMenu, setShowMobileMenu] = useState(false); // Toggle mobile menu
   const [betaFeaturesEnabled, setBetaFeaturesEnabled] = useState(false); // Toggle beta features
   const [showExportMenu, setShowExportMenu] = useState(false); // Toggle export dropdown menu
@@ -102,14 +121,33 @@ export default function ColorScaleEditor() {
     setSupportsP3(supported);
   }, []);
 
-  // Track screen view changes between Main and How to Use
+  // Persist help panel state to localStorage
   useEffect(() => {
-    if (showHowToUse) {
-      trackScreenView('How to Use');
-    } else {
-      trackScreenView('Main Screen');
+    localStorage.setItem('color-scale-editor-help-panel', JSON.stringify(helpPanelState));
+  }, [helpPanelState]);
+
+  // Sync isPanelMounted with isOpen, with delay on close for smooth animation
+  useEffect(() => {
+    if (helpPanelState.isOpen) {
+      // Open immediately
+      setIsPanelMounted(true);
     }
-  }, [showHowToUse]);
+    // Note: isPanelMounted is set to false via onAnimationComplete callback
+  }, [helpPanelState.isOpen]);
+
+  // Track help panel opening/closing with dwell time
+  const helpPanelOpenTimeRef = useRef(null);
+
+  useEffect(() => {
+    if (helpPanelState.isOpen) {
+      helpPanelOpenTimeRef.current = Date.now();
+      trackEvent('Help Panel Opened', { position: helpPanelState.position });
+    } else if (helpPanelOpenTimeRef.current) {
+      const dwellTime = Math.round((Date.now() - helpPanelOpenTimeRef.current) / 1000);
+      trackEvent('Help Panel Closed', { dwell_time_seconds: dwellTime });
+      helpPanelOpenTimeRef.current = null;
+    }
+  }, [helpPanelState.isOpen, helpPanelState.position]);
 
   // Click-outside detection for minimal view expansion
   useEffect(() => {
@@ -3337,56 +3375,22 @@ ${safelistPatterns}
 
   return (
     <Theme appearance={theme} accentColor="gray">
-      <div className={`min-h-screen p-4 md:p-8 ${theme === 'light' ? 'bg-warm-gray-200 text-neutral-1100' : 'bg-warm-gray-1100 text-gray-200'}`}>
-      <div className="max-w-7xl mx-auto">
-        {showHowToUse ? (
-          // "How to use" page
-          <div className="max-w-4xl mx-auto py-8">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className={`text-5xl font-bold font-fraunces ${theme === 'light' ? 'text-neutral-1100' : 'text-white'}`}>
-                How to use
-              </h1>
-              <Button
-                onClick={() => setShowHowToUse(false)}
-                variant="solid"
-                size="3"
-                className={`cardboard-primary ${
-                  theme === 'light'
-                    ? '!bg-warm-gray-1000 !text-gray-100'
-                    : '!bg-warm-gray-300 !text-gray-1200'
-                }`}
-              >
-                Back to editor
-              </Button>
-            </div>
-
-            <div className={`prose prose-lg max-w-none ${
-              theme === 'light'
-                ? 'prose-neutral prose-headings:text-neutral-1100 prose-p:text-neutral-900 prose-li:text-neutral-900 prose-strong:text-neutral-1100'
-                : 'prose-invert prose-headings:text-warm-gray-200 prose-p:text-gray-400 prose-li:text-gray-400 prose-strong:text-warm-gray-200'
-            }`}>
-              <ReactMarkdown>
-                {howToUseMarkdown}
-              </ReactMarkdown>
-            </div>
-
-            <div className="pt-8 text-center">
-              <Button
-                onClick={() => setShowHowToUse(false)}
-                variant="solid"
-                size="3"
-                className={`cardboard-primary ${
-                  theme === 'light'
-                    ? '!bg-warm-gray-1000 !text-gray-100'
-                    : '!bg-warm-gray-300 !text-gray-1200'
-                }`}
-              >
-                Back to editor
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
+      <div
+        className="grid"
+        style={{
+          height: '100vh',
+          gridTemplateRows: isPanelMounted && helpPanelState.position === 'bottom'
+            ? `1fr auto ${helpPanelState.height}px`
+            : '1fr',
+          gridTemplateColumns: isPanelMounted && helpPanelState.position === 'side'
+            ? `1fr auto ${helpPanelState.width}px`
+            : '1fr'
+        }}
+      >
+        {/* Main content area */}
+        <div className="overflow-auto">
+          <div className={`min-h-full p-4 md:p-8 vignette ${theme === 'light' ? 'bg-warm-gray-200 text-neutral-1100' : 'bg-warm-gray-1100 text-gray-200'}`}>
+            <div className="max-w-7xl mx-auto">
         {/* Header with Title and Social Links */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 pr-4">
@@ -3507,18 +3511,31 @@ ${safelistPatterns}
 
         {/* Action Buttons - Icon Only */}
         <div className="flex flex-wrap justify-between items-center gap-2 md:gap-3 mb-4">
-          <p className={`text-sm ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} max-w-xl`}>
-            Pre-baked with settings — see {' '}
+          <p className={`text-sm ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} `}>
+            To learn more on how to use, {' '}
             <button
-              onClick={() => setShowHowToUse(true)}
+              onClick={() => setHelpPanelState(prev => ({ ...prev, isOpen: true }))}
               className={`underline cursor-pointer ${
                 theme === 'light'
                   ? 'text-gray-900 hover:text-gray-700'
                   : 'text-gray-300 hover:text-gray-500'
               }`}
             >
-              how to use
-            </button>.
+              check out this guide
+            </button>
+            . For the origin story, {' '}
+            <a
+              href="YOUR_URL_HERE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`underline cursor-pointer ${
+                theme === 'light'
+                  ? 'text-gray-900 hover:text-gray-700'
+                  : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              see how it started
+            </a>.
           </p>
           <div className="flex flex-wrap justify-end items-center gap-2 md:gap-3">
           <input
@@ -5685,8 +5702,6 @@ ${safelistPatterns}
           </motion.div>
           )}
         </AnimatePresence>
-        </>
-        )}
       </div>
 
       {/* UI Preview Panel */}
@@ -5786,12 +5801,70 @@ ${safelistPatterns}
       </AnimatePresence>
 
       {/* Credit text */}
-      <div className="text-center py-8">
-        <p className={`text-sm ${theme === 'light' ? 'text-neutral-800' : 'text-gray-400'}`}>
-          Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan using Claude Code, React, and Radix.
-        </p>
+            <div className="text-center py-8">
+              <p className={`text-sm ${theme === 'light' ? 'text-neutral-800' : 'text-gray-400'}`}>
+                Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan using Claude Code, React, and Radix.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Resizable divider */}
+        {helpPanelState.isOpen && (
+          <ResizeDivider
+            position={helpPanelState.position}
+            currentSize={helpPanelState.position === 'bottom' ? helpPanelState.height : helpPanelState.width}
+            onResize={(newSize) => {
+              setHelpPanelState(prev => ({
+                ...prev,
+                [helpPanelState.position === 'bottom' ? 'height' : 'width']: newSize
+              }));
+              // Track resize event
+              trackEvent('Help Panel Resized', {
+                position: helpPanelState.position,
+                size: newSize
+              });
+            }}
+          />
+        )}
+
+        {/* Help panel content - wrapped to prevent expansion during close */}
+        {isPanelMounted && (
+          <div className="overflow-hidden">
+            <AnimatePresence
+              mode="wait"
+              onExitComplete={() => {
+                // Only unmount grid when actually closing, not when switching positions
+                if (!helpPanelState.isOpen) {
+                  setIsPanelMounted(false);
+                }
+              }}
+            >
+              {helpPanelState.isOpen && (
+                <motion.div
+                  key={`help-panel-${helpPanelState.position}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }}
+                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.1, ease: 'easeIn' } }}
+                  className="overflow-auto h-full"
+                >
+              <HelpPanelContent
+                theme={theme}
+                position={helpPanelState.position}
+                onTogglePosition={() => {
+                  setHelpPanelState(prev => ({
+                    ...prev,
+                    position: prev.position === 'bottom' ? 'side' : 'bottom'
+                  }));
+                }}
+                onClose={() => setHelpPanelState(prev => ({ ...prev, isOpen: false }))}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+          </div>
+        )}
       </div>
-    </div>
     </Theme>
   );
 }
