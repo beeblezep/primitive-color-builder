@@ -29,7 +29,13 @@ export function HelpPanelContent({ theme, position, onTogglePosition, onClose })
   };
 
   return (
-    <div className={`help-panel-split flex h-full ${theme === 'dark' ? 'dark' : ''}`}>
+    <div
+      className={`help-panel-split flex h-full ${theme === 'dark' ? 'dark' : ''}`}
+      style={{
+        backgroundColor: theme === 'dark' ? '#1a1816' : '#ffffff',
+        transition: 'background-color 0.15s ease'
+      }}
+    >
       {/* Header bar with controls */}
       <div className="help-panel-header">
         <h1 className={`text-2xl font-bold font-fraunces ${

@@ -109,13 +109,11 @@ export function HelpPanel({ isOpen, onClose, theme }) {
             aria-labelledby="help-panel-title"
             initial={{
               x: '100%',
-              y: 0,
-              opacity: 0
+              y: 0
             }}
             animate={{
               x: 0,
               y: 0,
-              opacity: 1,
               transition: {
                 duration: motionDuration.lg / 1000,
                 ease: [0.4, 0, 0.2, 1]
@@ -124,7 +122,6 @@ export function HelpPanel({ isOpen, onClose, theme }) {
             exit={{
               x: '100%',
               y: 0,
-              opacity: 0,
               transition: {
                 duration: motionDuration.exit / 1000
               }

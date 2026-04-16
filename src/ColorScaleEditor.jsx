@@ -5844,8 +5844,8 @@ ${safelistPatterns}
                 <motion.div
                   key={`help-panel-${helpPanelState.position}`}
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }}
-                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.1, ease: 'easeIn' } }}
+                  animate={{ opacity: 1, transition: { duration: 0.1, ease: 'easeOut' } }}
+                  exit={{ transition: { duration: 0.1 } }}
                   className="overflow-auto h-full"
                 >
               <HelpPanelContent
