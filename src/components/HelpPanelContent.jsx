@@ -64,7 +64,7 @@ export function HelpPanelContent({ theme, position, onTogglePosition, onClose })
             title={position === 'bottom' ? 'Move to side' : 'Move to bottom'}
           >
             <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
-              {position === 'bottom' ? 'chevron_right' : 'expand_more'}
+              {position === 'bottom' ? 'dock_to_right' : 'dock_to_bottom'}
             </span>
           </button>
           {/* Close button */}
