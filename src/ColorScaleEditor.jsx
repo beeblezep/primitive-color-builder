@@ -5803,7 +5803,7 @@ ${safelistPatterns}
       {/* Credit text */}
             <div className="text-center py-8">
               <p className={`text-sm ${theme === 'light' ? 'text-neutral-800' : 'text-gray-400'}`}>
-                Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan using Claude Code, React, and Radix.
+                Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan
               </p>
             </div>
           </div>
