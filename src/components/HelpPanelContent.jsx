@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { helpSections } from '../howToUseContent';
 
 /**
@@ -127,11 +128,11 @@ export function HelpPanelContent({ theme, position, onTogglePosition, onClose })
                   }`}>
                     {item.title}
                   </h3>
-                  <p className={`whitespace-pre-line leading-relaxed ${
+                  <div className={`whitespace-pre-line leading-relaxed ${
                     theme === 'light' ? 'text-neutral-900' : 'text-gray-400'
                   }`}>
-                    {item.content}
-                  </p>
+                    <ReactMarkdown>{item.content}</ReactMarkdown>
+                  </div>
                 </article>
               ))}
             </section>

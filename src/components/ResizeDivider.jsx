@@ -58,6 +58,10 @@ export function ResizeDivider({ position, currentSize, onResize }) {
       role="separator"
       aria-label={`Resize ${position} panel`}
       aria-orientation={position === 'bottom' ? 'horizontal' : 'vertical'}
-    />
+    >
+      <span className="material-symbols-rounded resize-grip">
+        drag_indicator
+      </span>
+    </div>
   );
 }

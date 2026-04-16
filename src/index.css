@@ -768,20 +768,20 @@ input[type="range"]::-moz-range-thumb {
 
 /* Resize divider */
 .resize-divider {
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 10;
 }
 
 .resize-divider.horizontal {
-  height: 4px;
+  height: 2px;
   cursor: ns-resize;
-  border-top: 2px solid #888888;
-  border-bottom: 2px solid #888888;
+  border-top: 1px solid #888888;
+  border-bottom: 1px solid #888888;
 }
 
 .resize-divider.vertical {
-  width: 4px;
+  width: 2px;
   cursor: ew-resize;
   border-left: 2px solid #888888;
   border-right: 2px solid #888888;
@@ -789,12 +789,45 @@ input[type="range"]::-moz-range-thumb {
 
 .resize-divider:hover,
 .resize-divider.active {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .dark .resize-divider:hover,
 .dark .resize-divider.active {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Drag indicator icon */
+.resize-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  color: #666666;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resize-divider.horizontal .resize-grip {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.resize-divider:hover .resize-grip,
+.resize-divider.active .resize-grip {
+  opacity: 1;
+}
+
+.dark .resize-grip {
+  color: #999999;
+  background-color: rgba(26, 24, 22, 0.8);
 }
 
 /* Help panel container */
@@ -891,6 +924,33 @@ input[type="range"]::-moz-range-thumb {
 
 .help-panel-content article {
   margin-bottom: 24px;
+}
+
+/* Markdown content styling */
+.help-panel-content p {
+  margin-bottom: 12px;
+}
+
+.help-panel-content p:last-child {
+  margin-bottom: 0;
+}
+
+.help-panel-content strong {
+  font-weight: 600;
+}
+
+.help-panel-content em {
+  font-style: italic;
+}
+
+.help-panel-content ul {
+  list-style-type: disc;
+  margin-left: 20px;
+  margin-bottom: 12px;
+}
+
+.help-panel-content li {
+  margin-bottom: 4px;
 }
 
 /* Responsive */
