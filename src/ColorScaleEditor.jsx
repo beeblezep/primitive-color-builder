@@ -13,15 +13,39 @@ export default function ColorScaleEditor() {
   const [dragging, setDragging] = useState(null);
   const [globalLstarMin, setGlobalLstarMin] = useState(5);
   const [globalLstarMax, setGlobalLstarMax] = useState(98);
-  const [colorScales, setColorScales] = useState([
-    {
-      id: 0,
-      name: 'gray',
-      hex: '#808080', // 50% gray
-      gamut: 'srgb', // Color space: 'srgb' or 'p3'
-      isGrayScale: true,
+  const [colorScales, setColorScales] = useState(() => {
+    const randomHue = Math.floor(Math.random() * 360);
+    const h = randomHue / 360;
+    const s = 0.65;
+    const l = 0.5;
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const hue2rgb = (pp, qq, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return pp + (qq - pp) * 6 * t;
+      if (t < 1/2) return qq;
+      if (t < 2/3) return pp + (qq - pp) * (2/3 - t) * 6;
+      return pp;
+    };
+    const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+    const randomHex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+
+    const hueNames = [
+      [15, 'red'], [35, 'orange'], [50, 'amber'], [65, 'yellow'],
+      [80, 'lime'], [150, 'green'], [170, 'emerald'], [185, 'teal'],
+      [195, 'cyan'], [210, 'sky'], [240, 'blue'], [260, 'indigo'],
+      [275, 'violet'], [290, 'purple'], [310, 'fuchsia'], [335, 'pink'],
+      [350, 'rose'], [360, 'red']
+    ];
+    const colorName = (hueNames.find(([boundary]) => randomHue < boundary) || hueNames[hueNames.length - 1])[1];
+
+    const defaultScale = {
+      gamut: 'srgb',
       isExpanded: false,
-      expandedInMinimalView: false, // Track inline expansion in minimal view
+      expandedInMinimalView: false,
       lightSurface: false,
       useCustomBezier: false,
       useCustomLstarRange: false,
@@ -38,11 +62,16 @@ export default function ColorScaleEditor() {
       cp2: { x: 0.50, y: 0.60 },
       isSingleColor: false,
       swatchCountOverride: null,
-      preHarmonizeHex: null, // Store original color before harmonizing
-      includeAnchors: false // Include pure white and black anchor swatches
-    }
-  ]);
-  const [nextColorId, setNextColorId] = useState(1);
+      preHarmonizeHex: null,
+      includeAnchors: false
+    };
+
+    return [
+      { ...defaultScale, id: 0, name: 'gray', hex: '#808080', isGrayScale: true },
+      { ...defaultScale, id: 1, name: colorName, hex: randomHex, isGrayScale: false },
+    ];
+  });
+  const [nextColorId, setNextColorId] = useState(2);
   const [comparisonLightSurface, setComparisonLightSurface] = useState(false);
   const [miniCanvasDragging, setMiniCanvasDragging] = useState({ id: null, point: null });
   const [numSwatches, setNumSwatches] = useState(12); // Number of visible swatches (excluding white and black)
@@ -4495,16 +4524,37 @@ ${safelistPatterns}
                       )}
                       {colorScales.length > 1 && (
                         <div className="relative harmonize-dropdown-container">
-                          <button
-                            onClick={() => setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                            className={`cardboard-small-button px-2 py-1 rounded text-sm font-medium ${
-                              theme === 'light'
-                                ? 'bg-gray-300 text-gray-1000 border border-gray-300'
-                                : 'bg-gray-1100 text-white border border-gray-1000'
-                            }`}
-                          >
-                            Harmonize...
-                          </button>
+                          {(() => {
+                            const hasHarmonizableScales = colorScales.some(otherScale => {
+                              if (otherScale.id === cs.id) return false;
+                              const rgb = hexToRgb(otherScale.hex);
+                              if (!rgb) return false;
+                              const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                              return hsl.s > 0;
+                            });
+                            const btn = (
+                              <button
+                                onClick={() => hasHarmonizableScales && setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
+                                disabled={!hasHarmonizableScales}
+                                className={`cardboard-small-button px-2 py-1 rounded text-sm font-medium ${
+                                  !hasHarmonizableScales
+                                    ? 'opacity-40 cursor-not-allowed'
+                                    : ''
+                                } ${
+                                  theme === 'light'
+                                    ? 'bg-gray-300 text-gray-1000 border border-gray-300'
+                                    : 'bg-gray-1100 text-white border border-gray-1000'
+                                }`}
+                              >
+                                Harmonize...
+                              </button>
+                            );
+                            return hasHarmonizableScales ? btn : (
+                              <Tooltip content="Add one or more non-neutral colors to harmonize this scale.">
+                                {btn}
+                              </Tooltip>
+                            );
+                          })()}
                           <div
                             className={`overflow-hidden absolute left-0 z-50 ${
                               scaleIndex >= colorScales.length - 2 ? 'bottom-full' : 'top-full'
@@ -4572,6 +4622,7 @@ ${safelistPatterns}
                                             <Tooltip
                                               key={method.id}
                                               content={method.desc}
+                                              side="right"
                                             >
                                               <button
                                                 onClick={() => {
@@ -5234,14 +5285,34 @@ ${safelistPatterns}
                           }`}
                           placeholder="#000000"
                         />
-                        {colorScales.length > 1 && (
-                          <div className="relative harmonize-dropdown-container">
+                        {colorScales.length > 1 && (() => {
+                          const hasHarmonizableScales = colorScales.some(otherScale => {
+                            if (otherScale.id === cs.id) return false;
+                            const rgb = hexToRgb(otherScale.hex);
+                            if (!rgb) return false;
+                            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                            return hsl.s > 0;
+                          });
+                          const btn = (
                             <button
-                              onClick={() => setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                              className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-800 rounded-md text-sm font-medium text-white transition-colors"
+                              onClick={() => hasHarmonizableScales && setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
+                              disabled={!hasHarmonizableScales}
+                              className={`px-3 py-1.5 bg-neutral-700 rounded-md text-sm font-medium text-white transition-colors ${
+                                !hasHarmonizableScales
+                                  ? 'opacity-40 cursor-not-allowed'
+                                  : 'hover:bg-neutral-800'
+                              }`}
                             >
                               Harmonize
                             </button>
+                          );
+                          return (
+                          <div className="relative harmonize-dropdown-container">
+                            {hasHarmonizableScales ? btn : (
+                              <Tooltip content="Add one or more non-neutral colors to harmonize this scale.">
+                                {btn}
+                              </Tooltip>
+                            )}
                             <div
                               className={`overflow-hidden absolute left-0 ${
                                 scaleIndex >= colorScales.length - 2 ? 'bottom-full' : 'top-full'
@@ -5301,7 +5372,8 @@ ${safelistPatterns}
                               </div>
                             </div>
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
