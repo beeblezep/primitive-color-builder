@@ -4387,9 +4387,11 @@ ${safelistPatterns}
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                          Key color
-                        </label>
+                        <Tooltip content="Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious (indicated by a key icon in the swatch).">
+                          <label className={`font-jetbrains-mono text-sm font-medium cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                            Key color
+                          </label>
+                        </Tooltip>
                         <input
                           type="color"
                           value={cs.hex}
@@ -4540,7 +4542,13 @@ ${safelistPatterns}
                                   </button>
                                 )}
                                 {colorScales
-                                  .filter(otherScale => otherScale.id !== cs.id)
+                                  .filter(otherScale => {
+                                    if (otherScale.id === cs.id) return false;
+                                    const rgb = hexToRgb(otherScale.hex);
+                                    if (!rgb) return false;
+                                    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                                    return hsl.s > 0;
+                                  })
                                   .map(otherScale => {
                                     const colorTheoryMethods = [
                                       { id: 'direct', name: 'Direct Match', desc: 'Match saturation & lightness' },
@@ -5003,12 +5011,14 @@ ${safelistPatterns}
                                 }}
                               >
                                 {isKeyColor && (viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
-                                  <span
-                                    className={`material-symbols-rounded absolute bottom-1 left-1/2 -translate-x-1/2 text-[14px] ${textColor}`}
-                                    style={{ opacity: 0.5, fontVariationSettings: "'FILL' 1" }}
-                                  >
-                                    {cs.lockKeyColor ? 'lock' : 'key'}
-                                  </span>
+                                  <Tooltip content={cs.lockKeyColor ? "Locked key color — this swatch uses the exact HEX value of the key color." : "Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious."}>
+                                    <span
+                                      className={`material-symbols-rounded absolute bottom-1 left-1/2 -translate-x-1/2 text-[14px] ${textColor}`}
+                                      style={{ opacity: 0.5, fontVariationSettings: "'FILL' 1" }}
+                                    >
+                                      {cs.lockKeyColor ? 'lock' : 'key'}
+                                    </span>
+                                  </Tooltip>
                                 )}
                                 {isAnchor && (viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
                                   <span
@@ -5182,9 +5192,11 @@ ${safelistPatterns}
                       </div>
                     </div>
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                        Key color
-                      </label>
+                      <Tooltip content="Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious (indicated by a key icon in the swatch).">
+                        <label className={`block text-sm font-medium mb-2 cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                          Key color
+                        </label>
+                      </Tooltip>
                       <div className="flex items-center gap-3">
                         <input
                           type="color"
@@ -5249,7 +5261,13 @@ ${safelistPatterns}
                                 <div className={`text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Harmonize with:</div>
                                 <div className="space-y-1 max-h-[240px] overflow-y-auto">
                                   {colorScales
-                                    .filter(otherCs => otherCs.id !== cs.id)
+                                    .filter(otherCs => {
+                                      if (otherCs.id === cs.id) return false;
+                                      const rgb = hexToRgb(otherCs.hex);
+                                      if (!rgb) return false;
+                                      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                                      return hsl.s > 0;
+                                    })
                                     .map(otherCs => (
                                       <button
                                         key={otherCs.id}
