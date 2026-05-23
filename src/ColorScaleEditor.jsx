@@ -3425,8 +3425,8 @@ ${safelistPatterns}
         {/* Header with Title and Social Links */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 pr-4">
-            <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-2 font-fraunces ${theme === 'light' ? 'text-neutral-1100' : 'text-warm-gray-200'}`}>Primitive color builder</h1>
-            <p className={`max-w-3xl text-sm md:text-base ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>Humans aren't computers — so why design colors like we are? Build harmonious color palettes rooted in how we perceive color.</p>
+            <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-2 font-fraunces ${theme === 'light' ? 'text-neutral-1100' : 'text-warm-gray-200'}`}>Not Yet Another Color Builder</h1>
+            <p className={`max-w-3xl text-sm md:text-base ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>A color builder with humans in mind.</p>
           </div>
 
           {/* Desktop Social Links - Hidden on mobile */}
@@ -3738,14 +3738,14 @@ ${safelistPatterns}
             </h2>
             <button
               onClick={resetAllSettings}
-              className={`cardboard-small-button px-2 py-1 text-sm ${
+              className={`cardboard-small-button w-9 h-9 rounded-md flex items-center justify-center ${
                 theme === 'light'
                   ? 'text-gray-900 hover:text-neutral-900'
                   : 'text-gray-500 border border-gray-1000 hover:text-gray-300'
               }`}
               title="Reset all global settings to defaults"
             >
-              Reset all
+              <span className="material-symbols-rounded" style={{ fontSize: '20px' }}>replay</span>
             </button>
           </div>
 
@@ -4524,22 +4524,29 @@ ${safelistPatterns}
                           <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
                         </label>
                       )}
-                      {colorScales.length > 1 && (
+                      {(() => {
+                        const csRgb = hexToRgb(cs.hex);
+                        const csHsl = csRgb ? rgbToHsl(csRgb.r, csRgb.g, csRgb.b) : null;
+                        if (!csHsl || csHsl.s === 0) return null;
+                        return true;
+                      })() && (
                         <div className="relative harmonize-dropdown-container">
                           {(() => {
-                            const hasHarmonizableScales = colorScales.some(otherScale => {
+                            const hasMultipleScales = colorScales.length > 1;
+                            const hasHarmonizableScales = hasMultipleScales && colorScales.some(otherScale => {
                               if (otherScale.id === cs.id) return false;
                               const rgb = hexToRgb(otherScale.hex);
                               if (!rgb) return false;
                               const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
                               return hsl.s > 0;
                             });
+                            const isDisabled = !hasMultipleScales || !hasHarmonizableScales;
                             const btn = (
                               <button
-                                onClick={() => hasHarmonizableScales && setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                                disabled={!hasHarmonizableScales}
+                                onClick={() => !isDisabled && setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
+                                disabled={isDisabled}
                                 className={`cardboard-small-button px-2 py-1 rounded text-sm font-medium ${
-                                  !hasHarmonizableScales
+                                  isDisabled
                                     ? 'opacity-40 cursor-not-allowed'
                                     : ''
                                 } ${
@@ -4548,14 +4555,14 @@ ${safelistPatterns}
                                     : 'bg-gray-1100 text-white border border-gray-1000'
                                 }`}
                               >
-                                Harmonize...
+                                Harmonize with...
                               </button>
                             );
-                            return hasHarmonizableScales ? btn : (
-                              <Tooltip content="Add one or more non-neutral colors to harmonize this scale.">
+                            return isDisabled ? (
+                              <Tooltip content={!hasMultipleScales ? "Add another scale to harmonize." : "Add one or more non-neutral colors to harmonize this scale."}>
                                 {btn}
                               </Tooltip>
-                            );
+                            ) : btn;
                           })()}
                           <div
                             className={`overflow-hidden absolute left-0 z-50 ${
@@ -4661,7 +4668,7 @@ ${safelistPatterns}
                         <button
                           onClick={() => moveColorScale(cs.id, 'up')}
                           disabled={scaleIndex === 0}
-                          className={`cardboard-arrow-button p-1.5 ${
+                          className={`cardboard-arrow-button w-9 h-9 rounded-sm flex items-center justify-center ${
                             scaleIndex === 0
                               ? theme === 'light'
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
@@ -4677,7 +4684,7 @@ ${safelistPatterns}
                         <button
                           onClick={() => moveColorScale(cs.id, 'down')}
                           disabled={scaleIndex === colorScales.length - 1}
-                          className={`cardboard-arrow-button p-1.5 ${
+                          className={`cardboard-arrow-button w-9 h-9 rounded-sm flex items-center justify-center ${
                             scaleIndex === colorScales.length - 1
                               ? theme === 'light'
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
@@ -4693,7 +4700,7 @@ ${safelistPatterns}
                       </div>
                       <button
                         onClick={() => removeColorScale(cs.id)}
-                        className="p-1.5 hover:bg-red-900 rounded transition-all duration-150 ease-in-out text-red-400 active:bg-red-950 active:scale-95"
+                        className="w-9 h-9 rounded-sm flex items-center justify-center hover:bg-red-900 transition-all duration-150 ease-in-out text-red-400 active:bg-red-950 active:scale-95"
                         title="Remove scale"
                       >
                         <span className="material-symbols-rounded text-[16px]">delete</span>
