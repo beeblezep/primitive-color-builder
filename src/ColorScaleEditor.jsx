@@ -1363,7 +1363,9 @@ export default function ColorScaleEditor() {
         return {
           ...cs,
           hex: harmonizedHex,
-          preHarmonizeHex: cs.preHarmonizeHex || cs.hex // Store original if not already stored
+          preHarmonizeHex: cs.preHarmonizeHex || cs.hex,
+          harmonizeMethod: method,
+          harmonizeBaseId: baseScaleId
         };
       }
       return cs;
@@ -1384,7 +1386,7 @@ export default function ColorScaleEditor() {
     // Restore original color and clear the stored value in a single state update
     setColorScales(colorScales.map(cs =>
       cs.id === scaleId
-        ? { ...cs, hex: scale.preHarmonizeHex, preHarmonizeHex: null }
+        ? { ...cs, hex: scale.preHarmonizeHex, preHarmonizeHex: null, harmonizeMethod: null, harmonizeBaseId: null }
         : cs
     ));
 
@@ -4629,12 +4631,15 @@ ${safelistPatterns}
                                                   harmonizeWithColor(cs.id, otherScale.id, method.id);
                                                   setHarmonizingScale(null);
                                                 }}
-                                                className={`px-2 py-1 rounded text-[11px] text-left transition-colors ${
-                                                  theme === 'light'
-                                                    ? 'hover:bg-gray-100 text-gray-700'
-                                                    : 'hover:bg-zinc-800 text-gray-400'
+                                                className={`px-2 py-1 rounded text-[11px] text-left transition-colors flex items-center gap-1.5 ${
+                                                  cs.harmonizeMethod === method.id && cs.harmonizeBaseId === otherScale.id
+                                                    ? (theme === 'light' ? 'bg-gray-200 text-gray-900 font-semibold' : 'bg-zinc-700 text-white font-semibold')
+                                                    : (theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-zinc-800 text-gray-400')
                                                 }`}
                                               >
+                                                {cs.harmonizeMethod === method.id && cs.harmonizeBaseId === otherScale.id && (
+                                                  <span className="material-symbols-rounded text-[12px]">check</span>
+                                                )}
                                                 {method.name}
                                               </button>
                                             </Tooltip>
@@ -5344,11 +5349,14 @@ ${safelistPatterns}
                                         key={otherCs.id}
                                         onClick={() => harmonizeWithColor(cs.id, otherCs.id)}
                                         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
-                                          theme === 'light'
-                                            ? 'hover:bg-gray-100'
-                                            : 'hover:bg-zinc-700'
+                                          cs.harmonizeBaseId === otherCs.id
+                                            ? (theme === 'light' ? 'bg-gray-200' : 'bg-zinc-600')
+                                            : (theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-zinc-700')
                                         }`}
                                       >
+                                        {cs.harmonizeBaseId === otherCs.id && (
+                                          <span className="material-symbols-rounded text-[14px]">check</span>
+                                        )}
                                         <div
                                           className={`w-4 h-4 rounded ${theme === 'light' ? 'border border-gray-400' : 'border border-zinc-600'}`}
                                           style={{ backgroundColor: otherCs.hex }}
