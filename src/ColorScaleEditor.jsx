@@ -4562,7 +4562,11 @@ ${safelistPatterns}
                               <Tooltip content={!hasMultipleScales ? "Add another scale to harmonize." : "Add one or more non-neutral colors to harmonize this scale."}>
                                 {btn}
                               </Tooltip>
-                            ) : btn;
+                            ) : (
+                              <Tooltip content="Harmonize this scale with other key colors using color theory. The hue of the key color will remain the same while saturation and lightness are adjusted to match the selected color harmony.">
+                                {btn}
+                              </Tooltip>
+                            );
                           })()}
                           <div
                             className={`overflow-hidden absolute left-0 z-50 ${
@@ -5320,7 +5324,11 @@ ${safelistPatterns}
                           );
                           return (
                           <div className="relative harmonize-dropdown-container">
-                            {hasHarmonizableScales ? btn : (
+                            {hasHarmonizableScales ? (
+                              <Tooltip content="Harmonize this scale with other key colors using color theory. The hue of the key color will remain the same while saturation and lightness are adjusted to match the selected color harmony.">
+                                {btn}
+                              </Tooltip>
+                            ) : (
                               <Tooltip content="Add one or more non-neutral colors to harmonize this scale.">
                                 {btn}
                               </Tooltip>
@@ -5608,16 +5616,6 @@ ${safelistPatterns}
                 </select>
               </div>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:self-end">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Switch
-                    checked={useColorTheory}
-                    onCheckedChange={setUseColorTheory}
-                    size="1"
-                  />
-                  <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
-                    {useColorTheory ? 'Color theory' : 'AI-based'}
-                  </span>
-                </label>
                 {selectedHarmoniousFamilies.size === 0 ? (
                   <Tooltip content="Select a color family to preview colors">
                     <Button
@@ -5756,18 +5754,6 @@ ${safelistPatterns}
                       }`}
                     >
                       Cancel
-                    </Button>
-                    <Button
-                      onClick={generateHarmoniousColors}
-                      variant="soft"
-                      size="3"
-                      className={`cardboard-secondary ${
-                        theme === 'light'
-                          ? '!bg-warm-gray-400 !text-gray-1100'
-                          : '!bg-warm-gray-1000 !text-gray-200'
-                      }`}
-                    >
-                      Regenerate All
                     </Button>
                     {selectedPreviews.size === 0 ? (
                       <Tooltip content="Select a color swatch to add a color scale to your palette">
