@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { trackEvent } from './analytics';
 import { ResizeDivider } from './components/ResizeDivider';
 import { HelpPanelContent } from './components/HelpPanelContent';
+import { LoveButton } from './components/LoveButton';
 
 export default function ColorScaleEditor() {
   const canvasRef = useRef(null);
@@ -3431,6 +3432,8 @@ ${safelistPatterns}
 
           {/* Desktop Social Links - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 pt-2">
+            <LoveButton theme={theme} dividerClassName={`w-px h-5 ${theme === 'light' ? 'bg-neutral-500' : 'bg-gray-700'}`} />
+
             <button
               data-tally-open="1AKbD1"
               data-tally-layout="modal"
@@ -3502,6 +3505,8 @@ ${safelistPatterns}
               className="md:hidden overflow-hidden mb-4"
             >
               <div className={`cardboard-panel p-4 flex flex-col gap-3 ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-1100'}`}>
+                <LoveButton theme={theme} dividerClassName={`w-full h-px ${theme === 'light' ? 'bg-neutral-300' : 'bg-gray-700'}`} />
+
                 <button
                   data-tally-open="1AKbD1"
                   data-tally-layout="modal"
