@@ -4462,7 +4462,7 @@ ${safelistPatterns}
                           }`}
                         />
                       </div>
-                      <Tooltip content="Lock a key color if you need to use the exact HEX value in your scale (useful for brand colors).">
+                      <Tooltip content="Lock a key color if you need to use the exact HEX value in your scale (useful for brand colors). Locked key colors map to the closest scale position that best matches other swatches in the scale.">
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <Checkbox
                             checked={cs.lockKeyColor}
@@ -4474,7 +4474,7 @@ ${safelistPatterns}
                         </label>
                       </Tooltip>
                       {!cs.isSingleColor && (
-                        <Tooltip content="Include pure white and black swatches at the ends">
+                        <Tooltip content="Include pure white and black swatches at the ends. Best for neutral scales.">
                           <label className="flex items-center gap-1.5 cursor-pointer">
                             <Checkbox
                               checked={cs.includeAnchors}
@@ -5594,7 +5594,7 @@ ${safelistPatterns}
               </div>
               <div className="flex flex-col gap-2 sm:self-end">
                 <label className={`font-jetbrains-mono block text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                  Base color
+                  Scale to harmonize with
                 </label>
                 <select
                   value={baseColorScaleId || ''}

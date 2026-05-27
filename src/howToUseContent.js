@@ -1,53 +1,65 @@
 // Structured help content for the HelpPanel component
 export const helpSections = [
   {
-    id: 'understanding-settings',
-    title: 'Understanding the Settings',
+    id: 'how-a-scale-is-built',
+    title: 'How a scale is built',
     items: [
       {
-        id: 'lightness-perception',
-        title: 'Lightness Values & Perception',
-        content: 'The settings are configured to specific lightness values that reflect how we perceive color. This includes a gentle S-curve with more subtle differences at the light end and less subtle differences at the dark end, because we are more sensitive to lighter values than darker values. The total lightness is capped at 98 at the light end and 5 at the dark end to avoid an awkward jump between the last two swatches.'
+        id: 'key-color-and-swatches',
+        title: 'Key color & swatches',
+        content: 'You pick one "key color" (e.g., blue). The editor generates 12 swatches from that color — ranging from nearly white at the top to nearly black at the bottom. Your key color sits somewhere in the middle.'
       },
       {
-        id: 'customizable-settings',
-        title: 'Customizable Settings',
-        content: 'All of these settings are customizable for your particular use case.'
+        id: 'bezier-curve',
+        title: 'Bezier curve (lightness distribution)',
+        content: 'The distribution isn\'t evenly spaced — it follows a Bezier curve that controls how lightness is spread across the steps. You can drag this curve to bunch more steps toward the light end or dark end.\n\nThink of it like a dimmer switch with a custom feel: you control how quickly or slowly the color gets darker.'
       },
       {
-        id: 'lab-color-space',
-        title: 'LAB Color Space (L*)',
-        content: 'L* represents lightness in the LAB color space, which is then translated to HEX and other color formats.'
+        id: 'lightness-caps',
+        title: 'Lightness caps',
+        content: 'The total lightness is capped at 98 at the light end and 5 at the dark end to avoid an awkward jump between the last two swatches.'
+      }
+    ]
+  },
+  {
+    id: 'how-to-use',
+    title: 'How to use',
+    items: [
+      {
+        id: 'start-with-gray',
+        title: 'Start with a neutral',
+        content: 'Add a gray scale first — this anchors your palette and gives you a reference point for everything else.'
       },
       {
-        id: 'luminance-mode',
-        title: 'Luminance Mode',
-        content: 'Use luminance mode to visually test value consistency across different hues and scales.'
+        id: 'add-primary-color',
+        title: 'Add your brand or primary color',
+        content: 'When you add a second scale and edit its key color, it automatically inherits the same lightness values as the corresponding swatches in your other scales. This keeps things harmonious from the start without any extra steps.'
       },
       {
-        id: 'custom-lightness-range',
-        title: 'Custom Lightness Range',
-        content: 'For certain colors, use a custom lightness range. For example, yellow works better with L*20-90.'
+        id: 'add-more-colors',
+        title: 'Add more colors',
+        content: 'Use **Add color families** to choose from common sentiments (success, warning, danger, etc.), or add a blank scale and dial in a custom color.'
       },
       {
-        id: 'hue-shift',
-        title: 'Hue Shift',
-        content: 'Use hue shift for certain colors to avoid odd transitions. For example, yellows can shift brown in the darks.'
+        id: 'adjust-to-taste',
+        title: 'Adjust to taste',
+        content: 'Once your scales are in place, you can drag the Bezier curve per scale to fine-tune how lightness is distributed — or use **Harmonize** to align a scale\'s energy more closely to another.'
+      }
+    ]
+  },
+  {
+    id: 'advanced',
+    title: 'Advanced',
+    items: [
+      {
+        id: 'saturation-and-hue',
+        title: 'Saturation taper & hue drift',
+        content: 'Beyond the basics, two additional properties can shift across a scale:\n\n- **Saturation taper** — your color can be vivid in the light tones and muted in the darks (or the reverse), rather than holding a flat saturation throughout\n- **Hue drift** — a blue can lean slightly purple in the darks and slightly teal in the lights, adding depth and naturalness to the ramp\n\nYellow is particularly sensitive to hue drift — if your darks are pulling muddy or brown, try reducing the hue drift range on that scale, or nudge the dark-end hue slightly toward orange to keep it warm without going dull.'
       },
       {
-        id: 'text-contrast',
-        title: 'Text Contrast Checking',
-        content: 'Check text contrast using standard AA or the newer APCA (recommended).'
-      },
-      {
-        id: 'numbering-system',
-        title: 'Numbering System',
-        content: 'The default numbering reflects lightness values, but you can choose sequential numbering instead. Lightness numbers reflect the general LAB-translated lightness value for that swatch.'
-      },
-      {
-        id: 'swatch-count',
-        title: 'Swatch Count',
-        content: 'The default swatch count is 12 which we feel covers the most use cases without feeling like too many. We started with a standard 10-step value scale but found we needed a bit more differentiation at the ends of the scale to support different surface types like containers and cards.'
+        id: 'harmonize',
+        title: 'How Harmonize works',
+        content: 'When you click **Harmonize** on a scale and pick another as the base, it doesn\'t change your hue — your blue stays blue. Instead, it borrows the saturation and lightness characteristics from the base scale and applies them to yours.\n\nEach scale keeps its own color identity, but they feel like they belong together.\n\nThe color theory methods control how those properties are borrowed:\n\n**Direct Match** — Copies the base\'s exact saturation & lightness\n\n**Complementary** — Copies saturation, flips lightness (if base is light, yours goes dark)\n\n**Analogous** — Slightly less saturated, slightly lighter than base\n\n**Triadic** — More saturated than base, same lightness\n\n**Monochromatic** — Same saturation, slightly darker than base'
       }
     ]
   },
@@ -56,19 +68,24 @@ export const helpSections = [
     title: 'Tips & Tricks',
     items: [
       {
-        id: 'getting-started',
-        title: 'Getting Started',
-        content: 'Start with gray and add a primary or brand color.'
-      },
-      {
-        id: 'adding-harmonious-colors',
-        title: 'Adding Harmonious Colors',
-        content: 'Do one of the following to start adding harmonious colors to your palette:\n\n• Add another scale, edit the key color to your desired color, and click **Harmonize**\n• Or, click **Add color families**'
-      },
-      {
         id: 'handling-gray',
-        title: 'Handling Gray',
-        content: '**Option 1: Pure Black & White**\nTo include pure black and pure white, select the **W/B** checkbox, which adds these to the scale. This is useful when using a semantic naming system like *neutral-100*. It\'s recommended to use sequential numbering with this method since the lightness token numbers are capped at 98 and 10.\n\n**Option 2: Single Swatches**\nAlternatively, you can use a single swatch for each black and white.'
+        title: 'Handling pure black and white swatches',
+        content: '**Option 1: Include pure white & black as part of your neutral scale**\nSelect the **W/B** checkbox to add pure white and black to the ends of your neutral scale. This is useful when using a semantic naming system like *neutral-100*. It\'s recommended to use sequential numbering with this method since the lightness token numbers are capped at 98 and 10.\n\n**Option 2: Single swatches**\nAlternatively, you can use a single swatch for each black and white.'
+      },
+      {
+        id: 'luminance-check',
+        title: 'Checking for visual harmony',
+        content: 'Use **Luminance** view to compare lightness balance across all scales at once. The closer the luminance values are across corresponding steps, the more cohesive the palette feels. If a scale looks off, try **Harmonize** to bring it in line.'
+      },
+      {
+        id: 'text-contrast',
+        title: 'Text contrast',
+        content: 'The contrast checker includes the newer **APCA** method for more perceptually accurate results — especially useful for UI text. Switch the swatch background color to simulate how your palette will look on different surfaces.'
+      },
+      {
+        id: 'numbering-system',
+        title: 'Numbering system',
+        content: 'The default numbering reflects lightness values — each number corresponds to the approximate LAB-translated lightness for that swatch. You can switch to sequential numbering instead, which is recommended when using the **W/B** option.'
       },
       {
         id: 'exporting',
@@ -82,7 +99,7 @@ export const helpSections = [
       },
       {
         id: 'sharing',
-        title: 'Share with Team',
+        title: 'Share with team',
         content: 'Share your color scales with team members by copying the shareable link, which preserves all your settings and customizations.'
       }
     ]
