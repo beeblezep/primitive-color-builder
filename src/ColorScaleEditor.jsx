@@ -2314,8 +2314,8 @@ export default function ColorScaleEditor() {
     }));
   };
 
-  // Import Figma Tokens JSON
-  const importFigmaTokens = (jsonContent) => {
+  // Import Design Tokens JSON (supports both W3C DTCG and legacy Figma Tokens format)
+  const importDesignTokens = (jsonContent) => {
     try {
       const parsed = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       const colorData = parsed.color;
@@ -2328,23 +2328,27 @@ export default function ColorScaleEditor() {
       const newScales = [];
       const nextId = colorScales.length > 0 ? Math.max(...colorScales.map(cs => cs.id)) + 1 : 0;
 
-      Object.entries(colorData).forEach(([colorName, swatches], index) => {
+      Object.entries(colorData)
+        .filter(([key]) => !key.startsWith('$'))
+        .forEach(([colorName, swatches], index) => {
         // Get all swatch entries and calculate their L* values
         let detectedGamut = 'srgb';
         const swatchEntries = Object.entries(swatches)
+          .filter(([key]) => !key.startsWith('$'))
           .map(([step, data]) => {
             let hex, gamut = 'srgb';
 
+            const colorValue = data.$value || data.value;
+
             // Check if value is P3 format: color(display-p3 r g b)
-            const p3Match = data.value.match(/color\(display-p3\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
+            const p3Match = colorValue.match(/color\(display-p3\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
             if (p3Match) {
               const [_, r, g, b] = p3Match;
               hex = p3ToHex(parseFloat(r), parseFloat(g), parseFloat(b));
               gamut = 'p3';
               detectedGamut = 'p3';
             } else {
-              // Standard hex value
-              hex = data.value;
+              hex = colorValue;
             }
 
             const rgb = hexToRgb(hex);
@@ -2404,16 +2408,16 @@ export default function ColorScaleEditor() {
       setColorScales([...colorScales, ...newScales]);
 
       // Track analytics
-      trackEvent('Figma Tokens Imported', {
+      trackEvent('Design Tokens Imported', {
         scaleCount: newScales.length,
         successful: true
       });
 
     } catch (error) {
-      console.error('Error importing Figma Tokens:', error);
+      console.error('Error importing design tokens:', error);
 
       // Track failed import
-      trackEvent('Figma Tokens Imported', {
+      trackEvent('Design Tokens Imported', {
         successful: false
       });
     }
@@ -2685,10 +2689,12 @@ export default function ColorScaleEditor() {
     }
   }, [showExportMenu]);
 
-  // Export to Figma Tokens format
-  const exportToFigmaTokens = () => {
+  // Export to W3C Design Tokens format (DTCG)
+  const exportToDesignTokens = () => {
     const tokens = {
-      color: {}
+      color: {
+        $type: "color"
+      }
     };
 
     // Add all color scales (including gray scale)
@@ -2697,10 +2703,8 @@ export default function ColorScaleEditor() {
 
       // Handle single colors differently
       if (cs.isSingleColor) {
-        // Single color: export as color.name without step number
         tokens.color[cs.name] = {
-          value: cs.gamut === 'p3' ? hexToP3CSS(cs.hex, 'p3') : cs.hex,
-          type: "color",
+          $value: cs.gamut === 'p3' ? hexToP3CSS(cs.hex, 'p3') : cs.hex,
           ...(cs.gamut === 'p3' && {
             $extensions: {
               'com.figma': {
@@ -2774,8 +2778,7 @@ export default function ColorScaleEditor() {
         tokens.color[cs.name] = {};
         scale.forEach(swatch => {
           tokens.color[cs.name][swatch.step] = {
-            value: cs.gamut === 'p3' ? hexToP3CSS(swatch.hex, 'p3') : swatch.hex,
-            type: "color",
+            $value: cs.gamut === 'p3' ? hexToP3CSS(swatch.hex, 'p3') : swatch.hex,
             ...(cs.gamut === 'p3' && {
               $extensions: {
                 'com.figma': {
@@ -2794,14 +2797,14 @@ export default function ColorScaleEditor() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'figma-tokens.json';
+    link.download = 'design-tokens.json';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
     // Track analytics
-    trackEvent('Exported to Figma', {
+    trackEvent('Exported Design Tokens', {
       scaleCount: colorScales.length,
       swatchCount: numSwatches
     });
@@ -2821,7 +2824,7 @@ export default function ColorScaleEditor() {
           ? hexToP3CSS(cs.hex, 'p3')
           : cs.hex;
       } else {
-        // Regular scale generation (same logic as exportToFigmaTokens)
+        // Regular scale generation (same logic as exportToDesignTokens)
         const tempSteps = effectiveSwatchCount + 2;
         const values = [];
 
@@ -3577,7 +3580,7 @@ ${safelistPatterns}
           <input
             type="file"
             accept=".json"
-            id="import-figma-tokens"
+            id="import-design-tokens"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -3586,7 +3589,7 @@ ${safelistPatterns}
                 reader.onload = (event) => {
                   const content = event.target?.result;
                   if (content) {
-                    importFigmaTokens(content);
+                    importDesignTokens(content);
                   }
                 };
                 reader.readAsText(file);
@@ -3595,7 +3598,7 @@ ${safelistPatterns}
           />
           <Tooltip content="Import JSON file">
             <button
-              onClick={() => document.getElementById('import-figma-tokens')?.click()}
+              onClick={() => document.getElementById('import-design-tokens')?.click()}
               className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
                 theme === 'light'
                   ? 'bg-gray-100 text-neutral-900 border border-gray-300'
@@ -3650,7 +3653,7 @@ ${safelistPatterns}
                   }`}
                 >
                   <button
-                    onClick={exportToFigmaTokens}
+                    onClick={exportToDesignTokens}
                     className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
                       theme === 'light'
                         ? 'text-neutral-900 hover:bg-gray-100'
@@ -3661,7 +3664,7 @@ ${safelistPatterns}
                       <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                         file_download
                       </span>
-                      <span>Figma Tokens JSON</span>
+                      <span>Design Tokens JSON</span>
                     </div>
                   </button>
 

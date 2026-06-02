@@ -83,6 +83,11 @@ export const helpSections = [
         content: 'The contrast checker includes the newer **APCA** method for more perceptually accurate results — especially useful for UI text. Switch the swatch background color to simulate how your palette will look on different surfaces.'
       },
       {
+        id: 'surface-check',
+        title: 'Surface check',
+        content: 'Switch the swatch background color to simulate how your palette will look on different surfaces.'
+      },
+      {
         id: 'numbering-system',
         title: 'Numbering system',
         content: 'The default numbering reflects lightness values — each number corresponds to the approximate LAB-translated lightness for that swatch. You can switch to sequential numbering instead, which is recommended when using the **W/B** option.'
@@ -90,12 +95,12 @@ export const helpSections = [
       {
         id: 'exporting',
         title: 'Export to JSON',
-        content: 'Export your color scales to JSON format for use in other tools and design systems. You can also use the Figma plugin to import directly into your design files.'
+        content: 'Export your color scales to W3C Design Tokens JSON format for use in other tools and design systems.'
       },
       {
         id: 'importing',
         title: 'Import from JSON',
-        content: 'Import from JSON to load previously saved color scales or to restore your work across sessions.'
+        content: 'Import from W3C Design Tokens or legacy Figma Tokens JSON to load previously saved color scales or to restore your work across sessions.'
       },
       {
         id: 'sharing',
