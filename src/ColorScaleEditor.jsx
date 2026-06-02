@@ -3423,7 +3423,7 @@ ${safelistPatterns}
         }}
       >
         {/* Main content area */}
-        <div className="overflow-auto">
+        <main className="overflow-auto">
           <div className={`min-h-full p-4 md:p-8 vignette ${theme === 'light' ? 'bg-warm-gray-200 text-neutral-1100' : 'bg-warm-gray-1100 text-gray-200'}`}>
             <div className="max-w-7xl mx-auto">
         {/* Header with Title and Social Links */}
@@ -3581,6 +3581,7 @@ ${safelistPatterns}
             type="file"
             accept=".json"
             id="import-design-tokens"
+            aria-label="Import design tokens JSON file"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -3878,6 +3879,7 @@ ${safelistPatterns}
             {/* Swatches Count */}
             <div className="flex items-center gap-2">
               <label
+                htmlFor="global-swatch-count"
                 className={`font-jetbrains-mono text-sm font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
                 onMouseDown={(e) => handleNumberDragStart(e, numSwatches, setNumSwatches, 4, 20, 1)}
                 title="Drag to change"
@@ -3885,6 +3887,7 @@ ${safelistPatterns}
                 Swatch count
               </label>
               <input
+                id="global-swatch-count"
                 type="number"
                 value={numSwatches}
                 onChange={(e) => setNumSwatches(Math.max(4, Math.min(20, parseInt(e.target.value) || 12)))}
@@ -3924,10 +3927,11 @@ ${safelistPatterns}
 
             {/* Swatch Background Color */}
             <div className="flex items-center gap-2">
-              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label htmlFor="swatch-bg-color" className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Swatch BG
               </label>
               <input
+                id="swatch-bg-color"
                 type="color"
                 value={swatchBackground}
                 onChange={(e) => setSwatchBackground(e.target.value)}
@@ -3946,6 +3950,7 @@ ${safelistPatterns}
                     setSwatchBackground(value);
                   }
                 }}
+                aria-label="Swatch background hex value"
                 className="cardboard-input w-20 px-2 py-1 rounded text-sm font-mono"
               />
             </div>
@@ -4001,6 +4006,7 @@ ${safelistPatterns}
                       disabled={!useCustomIncrement}
                       min="1"
                       max="1000"
+                      aria-label="Custom increment value"
                       className={`font-jetbrains-mono w-16 px-2 py-1 rounded-md text-sm focus:outline-none ${
                         theme === 'light'
                           ? 'bg-white border border-gray-300 text-neutral-1100 focus:border-cyan-600'
@@ -4109,6 +4115,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P1 X"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <input
@@ -4118,6 +4125,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P1 Y"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                 </div>
@@ -4138,6 +4146,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P2 X"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <input
@@ -4147,6 +4156,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P2 Y"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <button
@@ -4181,6 +4191,7 @@ ${safelistPatterns}
                     }}
                     min="0"
                     max="95"
+                    aria-label="Global L* range minimum"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
                     placeholder="Min"
                   />
@@ -4199,6 +4210,7 @@ ${safelistPatterns}
                     }}
                     min="5"
                     max="100"
+                    aria-label="Global L* range maximum"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
                     placeholder="Max"
                   />
@@ -4222,8 +4234,9 @@ ${safelistPatterns}
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
+                    <label htmlFor="global-lstar-max-slider" className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                     <input
+                      id="global-lstar-max-slider"
                       type="range"
                       min="5"
                       max="100"
@@ -4234,8 +4247,9 @@ ${safelistPatterns}
                     <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {globalLstarMax}</div>
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
+                    <label htmlFor="global-lstar-min-slider" className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                     <input
+                      id="global-lstar-min-slider"
                       type="range"
                       min="0"
                       max="95"
@@ -4404,10 +4418,11 @@ ${safelistPatterns}
                     {/* Left controls - wrap on all screens */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-sm font-medium tracking-narrow ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label htmlFor={`color-label-${cs.id}`} className={`font-jetbrains-mono text-sm font-medium tracking-narrow ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Color label
                         </label>
                         <input
+                          id={`color-label-${cs.id}`}
                           type="text"
                           value={cs.name}
                           onChange={(e) => updateColorScaleName(cs.id, e.target.value)}
@@ -4427,11 +4442,12 @@ ${safelistPatterns}
                       </div>
                       <div className="flex items-center gap-2">
                         <Tooltip content="Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious (indicated by a key icon in the swatch).">
-                          <label className={`font-jetbrains-mono text-sm font-medium cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                          <label htmlFor={`key-color-${cs.id}`} className={`font-jetbrains-mono text-sm font-medium cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                             Key color
                           </label>
                         </Tooltip>
                         <input
+                          id={`key-color-${cs.id}`}
                           type="color"
                           value={cs.hex}
                           onChange={(e) => updateColorScaleHex(cs.id, e.target.value)}
@@ -4445,6 +4461,7 @@ ${safelistPatterns}
                           type="text"
                           defaultValue={cs.hex}
                           key={cs.hex}
+                          aria-label={`${cs.name} key color hex value`}
                           onBlur={(e) => {
                             const value = e.target.value.trim();
                             if (/^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{3}$/.test(value)) {
@@ -4502,8 +4519,9 @@ ${safelistPatterns}
                       </Tooltip>
                       {!cs.isSingleColor && (
                         <div className="flex items-center gap-1">
-                          <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
+                          <label htmlFor={`swatch-count-${cs.id}`} className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
                           <input
+                            id={`swatch-count-${cs.id}`}
                             type="number"
                             value={cs.swatchCountOverride ?? numSwatches}
                             onChange={(e) => updateSwatchCountOverride(cs.id, e.target.value)}
@@ -4768,8 +4786,9 @@ ${safelistPatterns}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
+                            <label htmlFor={`lstar-max-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                             <input
+                              id={`lstar-max-${cs.id}`}
                               type="range"
                               min="5"
                               max="100"
@@ -4780,8 +4799,9 @@ ${safelistPatterns}
                             <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {cs.lstarMax}</div>
                           </div>
                           <div>
-                            <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
+                            <label htmlFor={`lstar-min-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                             <input
+                              id={`lstar-min-${cs.id}`}
                               type="range"
                               min="0"
                               max="95"
@@ -4811,8 +4831,9 @@ ${safelistPatterns}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
+                          <label htmlFor={`saturation-max-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                           <input
+                            id={`saturation-max-${cs.id}`}
                             type="range"
                             min="0"
                             max="100"
@@ -4823,8 +4844,9 @@ ${safelistPatterns}
                           <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.saturationMax}%</div>
                         </div>
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
+                          <label htmlFor={`saturation-min-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                           <input
+                            id={`saturation-min-${cs.id}`}
                             type="range"
                             min="0"
                             max="100"
@@ -4853,8 +4875,9 @@ ${safelistPatterns}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Light end</label>
+                          <label htmlFor={`hue-shift-light-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Light end</label>
                           <input
+                            id={`hue-shift-light-${cs.id}`}
                             type="range"
                             min="-180"
                             max="180"
@@ -4865,8 +4888,9 @@ ${safelistPatterns}
                           <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.hueShiftLight}°</div>
                         </div>
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Dark end</label>
+                          <label htmlFor={`hue-shift-dark-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Dark end</label>
                           <input
+                            id={`hue-shift-dark-${cs.id}`}
                             type="range"
                             min="-180"
                             max="180"
@@ -4937,6 +4961,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P1 X`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                   <input
@@ -4946,6 +4971,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P1 Y`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                 </div>
@@ -4960,6 +4986,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P2 X`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                   <input
@@ -4969,6 +4996,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P2 Y`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                 </div>
@@ -5174,6 +5202,7 @@ ${safelistPatterns}
                                     type="text"
                                     defaultValue={v.hex.slice(1)}
                                     key={v.hex}
+                                    aria-label={`${cs.name} swatch ${v.step} hex value`}
                                     onBlur={(e) => {
                                       const value = e.target.value.trim();
                                       const hexValue = value.startsWith('#') ? value : `#${value}`;
@@ -5248,10 +5277,11 @@ ${safelistPatterns}
                   {/* Token Prefix and Key Color */}
                   <div className="mb-4 flex gap-4 items-start hidden">
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                      <label htmlFor={`token-prefix-${cs.id}`} className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                         Token prefix
                       </label>
                       <input
+                        id={`token-prefix-${cs.id}`}
                         type="text"
                         value={cs.name}
                         onChange={(e) => updateColorScaleName(cs.id, e.target.value)}
@@ -5268,12 +5298,13 @@ ${safelistPatterns}
                     </div>
                     <div>
                       <Tooltip content="Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious (indicated by a key icon in the swatch).">
-                        <label className={`block text-sm font-medium mb-2 cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label htmlFor={`expanded-key-color-${cs.id}`} className={`block text-sm font-medium mb-2 cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Key color
                         </label>
                       </Tooltip>
                       <div className="flex items-center gap-3">
                         <input
+                          id={`expanded-key-color-${cs.id}`}
                           type="color"
                           value={cs.hex}
                           onChange={(e) => updateColorScaleHex(cs.id, e.target.value)}
@@ -5286,7 +5317,8 @@ ${safelistPatterns}
                         <input
                           type="text"
                           defaultValue={cs.hex}
-                          key={cs.hex} // Force re-render when hex changes externally
+                          key={cs.hex}
+                          aria-label={`${cs.name} key color hex value`}
                           onBlur={(e) => {
                             const value = e.target.value.trim();
                             // Validate complete hex code (3 or 6 digits)
@@ -5596,10 +5628,11 @@ ${safelistPatterns}
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:self-end">
-                <label className={`font-jetbrains-mono block text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                <label htmlFor="harmonize-base-scale" className={`font-jetbrains-mono block text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                   Scale to harmonize with
                 </label>
                 <select
+                  id="harmonize-base-scale"
                   value={baseColorScaleId || ''}
                   onChange={(e) => setBaseColorScaleId(e.target.value ? parseInt(e.target.value) : null)}
                   className={`font-jetbrains-mono cardboard-input px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
@@ -5863,12 +5896,13 @@ ${safelistPatterns}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {Object.keys(semanticMappings).map(role => (
                   <div key={role}>
-                    <label className={`font-jetbrains-mono block text-xs font-medium mb-1 capitalize ${
+                    <label htmlFor={`semantic-${role}`} className={`font-jetbrains-mono block text-xs font-medium mb-1 capitalize ${
                       theme === 'light' ? 'text-neutral-900' : 'text-gray-500'
                     }`}>
                       {role}
                     </label>
                     <select
+                      id={`semantic-${role}`}
                       value={semanticMappings[role] ?? ''}
                       onChange={(e) => updateSemanticMapping(role, e.target.value === '' ? null : parseInt(e.target.value))}
                       className={`w-full px-2 py-1.5 rounded text-sm font-mono ${
@@ -5901,12 +5935,12 @@ ${safelistPatterns}
 
       {/* Credit text */}
             <div className="text-center py-8">
-              <p className={`text-sm ${theme === 'light' ? 'text-neutral-800' : 'text-gray-400'}`}>
+              <p className={`text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
                 Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan
               </p>
             </div>
           </div>
-        </div>
+        </main>
 
         {/* Resizable divider */}
         {helpPanelState.isOpen && (
