@@ -38,12 +38,12 @@ export const helpSections = [
       {
         id: 'add-more-colors',
         title: 'Add more colors',
-        content: 'Use **Add color families** to choose from common sentiments (success, warning, danger, etc.), or add a blank scale and dial in a custom color.'
+        content: 'Use **Add color families** to choose from common sentiments (success, warning, danger, etc.), or add another color scale and dial in a custom color.'
       },
       {
         id: 'adjust-to-taste',
         title: 'Adjust to taste',
-        content: 'Once your scales are in place, you can drag the Bezier curve per scale to fine-tune how lightness is distributed — or use **Harmonize** to align a scale\'s energy more closely to another.'
+        content: 'Once your scales are in place, you can drag the Bezier curve per scale to fine-tune how lightness is distributed — or use [Harmonize](#harmonize) to align a scale\'s energy more closely to another.'
       }
     ]
   },
@@ -54,7 +54,7 @@ export const helpSections = [
       {
         id: 'saturation-and-hue',
         title: 'Saturation taper & hue drift',
-        content: 'Beyond the basics, two additional properties can shift across a scale:\n\n- **Saturation taper** — your color can be vivid in the light tones and muted in the darks (or the reverse), rather than holding a flat saturation throughout\n- **Hue drift** — a blue can lean slightly purple in the darks and slightly teal in the lights, adding depth and naturalness to the ramp\n\nYellow is particularly sensitive to hue drift — if your darks are pulling muddy or brown, try reducing the hue drift range on that scale, or nudge the dark-end hue slightly toward orange to keep it warm without going dull.'
+        content: 'Beyond the basics, two additional properties can shift across a scale:\n\n- **Saturation taper** — your color can be vivid in the light tones and muted in the darks (or the reverse), rather than holding a flat saturation throughout. Reds, oranges, and cyans are most affected since they have the widest saturation range. Yellows and greens need a lighter touch — too much taper in the darks can make them look muddy or olive. To adjust the saturation range go to **Advanced > Saturation range** for that scale. \n- **Hue drift** — a blue can lean slightly purple in the darks and slightly teal in the lights, adding depth and naturalness to the ramp. Yellow is particularly sensitive to hue drift — if your darks are turning ugly, try adjusting the hue drift range on that scale by going to **Advanced > Hue shift** and modifying the values in that scale to keep it warm without going dull.'
       },
       {
         id: 'harmonize',
@@ -90,7 +90,7 @@ export const helpSections = [
       {
         id: 'numbering-system',
         title: 'Numbering system',
-        content: 'The default numbering reflects lightness values — each number corresponds to the approximate LAB-translated lightness for that swatch. You can switch to sequential numbering instead, which is recommended when using the **W/B** option.'
+        content: 'The default numbering reflects lightness values — each number corresponds to the approximate LAB-translated lightness for that swatch, e.g., 98,95,90. This number automatically adjusts as you add or remove swatches to your scale. Alternatively, you can switch to sequential numbering, which is recommended when using the **W/B** option.'
       },
       {
         id: 'exporting',

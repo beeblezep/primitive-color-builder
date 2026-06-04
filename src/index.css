@@ -979,6 +979,10 @@ input[type="range"]::-moz-range-thumb {
   font-style: italic;
 }
 
+.help-panel-content a {
+  text-decoration: underline;
+}
+
 .help-panel-content ul {
   list-style-type: disc;
   margin-left: 20px;
