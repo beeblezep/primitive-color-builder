@@ -3564,7 +3564,7 @@ ${safelistPatterns}
             </button>
             . For the origin story, {' '}
             <a
-              href="YOUR_URL_HERE"
+              href="https://medium.com/@beeblezep/why-i-built-yet-another-color-generator-7e7261518a43"
               target="_blank"
               rel="noopener noreferrer"
               className={`underline cursor-pointer ${
