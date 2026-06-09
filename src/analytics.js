@@ -4,7 +4,7 @@ import * as amplitude from '@amplitude/analytics-browser';
  * Generate or retrieve persistent user ID from localStorage
  * @returns {string} UUID v4 user ID
  */
-function getUserId() {
+export function getUserId() {
   let userId = localStorage.getItem('analytics_user_id');
   if (!userId) {
     // Generate UUID v4

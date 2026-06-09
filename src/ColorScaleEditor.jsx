@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motionPresets } from './motionTokens';
 import { SegmentedControl, Theme, Switch, Tooltip, Checkbox, Button } from '@radix-ui/themes';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import { howToUseMarkdown } from './howToUseContent';
-import { trackEvent, trackScreenView } from './analytics';
+import { trackEvent } from './analytics';
+import { ResizeDivider } from './components/ResizeDivider';
+import { HelpPanelContent } from './components/HelpPanelContent';
+import { LoveButton } from './components/LoveButton';
 
 export default function ColorScaleEditor() {
   const canvasRef = useRef(null);
@@ -13,15 +14,39 @@ export default function ColorScaleEditor() {
   const [dragging, setDragging] = useState(null);
   const [globalLstarMin, setGlobalLstarMin] = useState(5);
   const [globalLstarMax, setGlobalLstarMax] = useState(98);
-  const [colorScales, setColorScales] = useState([
-    {
-      id: 0,
-      name: 'gray',
-      hex: '#808080', // 50% gray
-      gamut: 'srgb', // Color space: 'srgb' or 'p3'
-      isGrayScale: true,
+  const [colorScales, setColorScales] = useState(() => {
+    const randomHue = Math.floor(Math.random() * 360);
+    const h = randomHue / 360;
+    const s = 0.65;
+    const l = 0.5;
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const hue2rgb = (pp, qq, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return pp + (qq - pp) * 6 * t;
+      if (t < 1/2) return qq;
+      if (t < 2/3) return pp + (qq - pp) * (2/3 - t) * 6;
+      return pp;
+    };
+    const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+    const randomHex = '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+
+    const hueNames = [
+      [15, 'red'], [35, 'orange'], [50, 'amber'], [65, 'yellow'],
+      [80, 'lime'], [150, 'green'], [170, 'emerald'], [185, 'teal'],
+      [195, 'cyan'], [210, 'sky'], [240, 'blue'], [260, 'indigo'],
+      [275, 'violet'], [290, 'purple'], [310, 'fuchsia'], [335, 'pink'],
+      [350, 'rose'], [360, 'red']
+    ];
+    const colorName = (hueNames.find(([boundary]) => randomHue < boundary) || hueNames[hueNames.length - 1])[1];
+
+    const defaultScale = {
+      gamut: 'srgb',
       isExpanded: false,
-      expandedInMinimalView: false, // Track inline expansion in minimal view
+      expandedInMinimalView: false,
       lightSurface: false,
       useCustomBezier: false,
       useCustomLstarRange: false,
@@ -38,11 +63,16 @@ export default function ColorScaleEditor() {
       cp2: { x: 0.50, y: 0.60 },
       isSingleColor: false,
       swatchCountOverride: null,
-      preHarmonizeHex: null, // Store original color before harmonizing
-      includeAnchors: false // Include pure white and black anchor swatches
-    }
-  ]);
-  const [nextColorId, setNextColorId] = useState(1);
+      preHarmonizeHex: null,
+      includeAnchors: false
+    };
+
+    return [
+      { ...defaultScale, id: 0, name: 'gray', hex: '#808080', isGrayScale: true },
+      { ...defaultScale, id: 1, name: colorName, hex: randomHex, isGrayScale: false },
+    ];
+  });
+  const [nextColorId, setNextColorId] = useState(2);
   const [comparisonLightSurface, setComparisonLightSurface] = useState(false);
   const [miniCanvasDragging, setMiniCanvasDragging] = useState({ id: null, point: null });
   const [numSwatches, setNumSwatches] = useState(12); // Number of visible swatches (excluding white and black)
@@ -72,7 +102,26 @@ export default function ColorScaleEditor() {
   const [globalGamut, setGlobalGamut] = useState('srgb'); // Color space: 'srgb' or 'p3'
   const [supportsP3, setSupportsP3] = useState(false); // Browser P3 capability detection
   const [showP3Warning, setShowP3Warning] = useState(false); // First-time P3 mode warning
-  const [showHowToUse, setShowHowToUse] = useState(false); // Toggle "How to use" page
+  // Help panel state with localStorage persistence
+  const [helpPanelState, setHelpPanelState] = useState(() => {
+    const stored = localStorage.getItem('color-scale-editor-help-panel');
+    const defaults = { isOpen: false, position: 'bottom', width: 450, height: 300 };
+
+    if (!stored) return defaults;
+
+    try {
+      const parsed = JSON.parse(stored);
+      return {
+        isOpen: Boolean(parsed.isOpen),
+        position: ['bottom', 'side'].includes(parsed.position) ? parsed.position : 'bottom',
+        width: Math.min(800, Math.max(320, parsed.width || 450)),
+        height: Math.min(600, Math.max(200, parsed.height || 300))
+      };
+    } catch {
+      return defaults;
+    }
+  });
+  const [isPanelMounted, setIsPanelMounted] = useState(false); // Controls grid layout during animations
   const [showMobileMenu, setShowMobileMenu] = useState(false); // Toggle mobile menu
   const [betaFeaturesEnabled, setBetaFeaturesEnabled] = useState(false); // Toggle beta features
   const [showExportMenu, setShowExportMenu] = useState(false); // Toggle export dropdown menu
@@ -102,14 +151,33 @@ export default function ColorScaleEditor() {
     setSupportsP3(supported);
   }, []);
 
-  // Track screen view changes between Main and How to Use
+  // Persist help panel state to localStorage
   useEffect(() => {
-    if (showHowToUse) {
-      trackScreenView('How to Use');
-    } else {
-      trackScreenView('Main Screen');
+    localStorage.setItem('color-scale-editor-help-panel', JSON.stringify(helpPanelState));
+  }, [helpPanelState]);
+
+  // Sync isPanelMounted with isOpen, with delay on close for smooth animation
+  useEffect(() => {
+    if (helpPanelState.isOpen) {
+      // Open immediately
+      setIsPanelMounted(true);
     }
-  }, [showHowToUse]);
+    // Note: isPanelMounted is set to false via onAnimationComplete callback
+  }, [helpPanelState.isOpen]);
+
+  // Track help panel opening/closing with dwell time
+  const helpPanelOpenTimeRef = useRef(null);
+
+  useEffect(() => {
+    if (helpPanelState.isOpen) {
+      helpPanelOpenTimeRef.current = Date.now();
+      trackEvent('Help Panel Opened', { position: helpPanelState.position });
+    } else if (helpPanelOpenTimeRef.current) {
+      const dwellTime = Math.round((Date.now() - helpPanelOpenTimeRef.current) / 1000);
+      trackEvent('Help Panel Closed', { dwell_time_seconds: dwellTime });
+      helpPanelOpenTimeRef.current = null;
+    }
+  }, [helpPanelState.isOpen, helpPanelState.position]);
 
   // Click-outside detection for minimal view expansion
   useEffect(() => {
@@ -1296,7 +1364,9 @@ export default function ColorScaleEditor() {
         return {
           ...cs,
           hex: harmonizedHex,
-          preHarmonizeHex: cs.preHarmonizeHex || cs.hex // Store original if not already stored
+          preHarmonizeHex: cs.preHarmonizeHex || cs.hex,
+          harmonizeMethod: method,
+          harmonizeBaseId: baseScaleId
         };
       }
       return cs;
@@ -1317,7 +1387,7 @@ export default function ColorScaleEditor() {
     // Restore original color and clear the stored value in a single state update
     setColorScales(colorScales.map(cs =>
       cs.id === scaleId
-        ? { ...cs, hex: scale.preHarmonizeHex, preHarmonizeHex: null }
+        ? { ...cs, hex: scale.preHarmonizeHex, preHarmonizeHex: null, harmonizeMethod: null, harmonizeBaseId: null }
         : cs
     ));
 
@@ -2244,8 +2314,8 @@ export default function ColorScaleEditor() {
     }));
   };
 
-  // Import Figma Tokens JSON
-  const importFigmaTokens = (jsonContent) => {
+  // Import Design Tokens JSON (supports both W3C DTCG and legacy Figma Tokens format)
+  const importDesignTokens = (jsonContent) => {
     try {
       const parsed = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       const colorData = parsed.color;
@@ -2258,23 +2328,27 @@ export default function ColorScaleEditor() {
       const newScales = [];
       const nextId = colorScales.length > 0 ? Math.max(...colorScales.map(cs => cs.id)) + 1 : 0;
 
-      Object.entries(colorData).forEach(([colorName, swatches], index) => {
+      Object.entries(colorData)
+        .filter(([key]) => !key.startsWith('$'))
+        .forEach(([colorName, swatches], index) => {
         // Get all swatch entries and calculate their L* values
         let detectedGamut = 'srgb';
         const swatchEntries = Object.entries(swatches)
+          .filter(([key]) => !key.startsWith('$'))
           .map(([step, data]) => {
             let hex, gamut = 'srgb';
 
+            const colorValue = data.$value || data.value;
+
             // Check if value is P3 format: color(display-p3 r g b)
-            const p3Match = data.value.match(/color\(display-p3\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
+            const p3Match = colorValue.match(/color\(display-p3\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
             if (p3Match) {
               const [_, r, g, b] = p3Match;
               hex = p3ToHex(parseFloat(r), parseFloat(g), parseFloat(b));
               gamut = 'p3';
               detectedGamut = 'p3';
             } else {
-              // Standard hex value
-              hex = data.value;
+              hex = colorValue;
             }
 
             const rgb = hexToRgb(hex);
@@ -2334,16 +2408,16 @@ export default function ColorScaleEditor() {
       setColorScales([...colorScales, ...newScales]);
 
       // Track analytics
-      trackEvent('Figma Tokens Imported', {
+      trackEvent('Design Tokens Imported', {
         scaleCount: newScales.length,
         successful: true
       });
 
     } catch (error) {
-      console.error('Error importing Figma Tokens:', error);
+      console.error('Error importing design tokens:', error);
 
       // Track failed import
-      trackEvent('Figma Tokens Imported', {
+      trackEvent('Design Tokens Imported', {
         successful: false
       });
     }
@@ -2615,10 +2689,12 @@ export default function ColorScaleEditor() {
     }
   }, [showExportMenu]);
 
-  // Export to Figma Tokens format
-  const exportToFigmaTokens = () => {
+  // Export to W3C Design Tokens format (DTCG)
+  const exportToDesignTokens = () => {
     const tokens = {
-      color: {}
+      color: {
+        $type: "color"
+      }
     };
 
     // Add all color scales (including gray scale)
@@ -2627,10 +2703,8 @@ export default function ColorScaleEditor() {
 
       // Handle single colors differently
       if (cs.isSingleColor) {
-        // Single color: export as color.name without step number
         tokens.color[cs.name] = {
-          value: cs.gamut === 'p3' ? hexToP3CSS(cs.hex, 'p3') : cs.hex,
-          type: "color",
+          $value: cs.gamut === 'p3' ? hexToP3CSS(cs.hex, 'p3') : cs.hex,
           ...(cs.gamut === 'p3' && {
             $extensions: {
               'com.figma': {
@@ -2704,8 +2778,7 @@ export default function ColorScaleEditor() {
         tokens.color[cs.name] = {};
         scale.forEach(swatch => {
           tokens.color[cs.name][swatch.step] = {
-            value: cs.gamut === 'p3' ? hexToP3CSS(swatch.hex, 'p3') : swatch.hex,
-            type: "color",
+            $value: cs.gamut === 'p3' ? hexToP3CSS(swatch.hex, 'p3') : swatch.hex,
             ...(cs.gamut === 'p3' && {
               $extensions: {
                 'com.figma': {
@@ -2724,14 +2797,14 @@ export default function ColorScaleEditor() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'figma-tokens.json';
+    link.download = 'design-tokens.json';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
     // Track analytics
-    trackEvent('Exported to Figma', {
+    trackEvent('Exported Design Tokens', {
       scaleCount: colorScales.length,
       swatchCount: numSwatches
     });
@@ -2751,7 +2824,7 @@ export default function ColorScaleEditor() {
           ? hexToP3CSS(cs.hex, 'p3')
           : cs.hex;
       } else {
-        // Regular scale generation (same logic as exportToFigmaTokens)
+        // Regular scale generation (same logic as exportToDesignTokens)
         const tempSteps = effectiveSwatchCount + 2;
         const values = [];
 
@@ -3337,65 +3410,33 @@ ${safelistPatterns}
 
   return (
     <Theme appearance={theme} accentColor="gray">
-      <div className={`min-h-screen p-4 md:p-8 ${theme === 'light' ? 'bg-warm-gray-200 text-neutral-1100' : 'bg-warm-gray-1100 text-gray-200'}`}>
-      <div className="max-w-7xl mx-auto">
-        {showHowToUse ? (
-          // "How to use" page
-          <div className="max-w-4xl mx-auto py-8">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className={`text-5xl font-bold font-fraunces ${theme === 'light' ? 'text-neutral-1100' : 'text-white'}`}>
-                How to use
-              </h1>
-              <Button
-                onClick={() => setShowHowToUse(false)}
-                variant="solid"
-                size="3"
-                className={`cardboard-primary ${
-                  theme === 'light'
-                    ? '!bg-warm-gray-1000 !text-gray-100'
-                    : '!bg-warm-gray-300 !text-gray-1200'
-                }`}
-              >
-                Back to editor
-              </Button>
-            </div>
-
-            <div className={`prose prose-lg max-w-none ${
-              theme === 'light'
-                ? 'prose-neutral prose-headings:text-neutral-1100 prose-p:text-neutral-900 prose-li:text-neutral-900 prose-strong:text-neutral-1100'
-                : 'prose-invert prose-headings:text-warm-gray-200 prose-p:text-gray-400 prose-li:text-gray-400 prose-strong:text-warm-gray-200'
-            }`}>
-              <ReactMarkdown>
-                {howToUseMarkdown}
-              </ReactMarkdown>
-            </div>
-
-            <div className="pt-8 text-center">
-              <Button
-                onClick={() => setShowHowToUse(false)}
-                variant="solid"
-                size="3"
-                className={`cardboard-primary ${
-                  theme === 'light'
-                    ? '!bg-warm-gray-1000 !text-gray-100'
-                    : '!bg-warm-gray-300 !text-gray-1200'
-                }`}
-              >
-                Back to editor
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
+      <div
+        className="grid"
+        style={{
+          height: '100vh',
+          gridTemplateRows: isPanelMounted && helpPanelState.position === 'bottom'
+            ? `1fr auto ${helpPanelState.height}px`
+            : '1fr',
+          gridTemplateColumns: isPanelMounted && helpPanelState.position === 'side'
+            ? `1fr auto ${helpPanelState.width}px`
+            : '1fr'
+        }}
+      >
+        {/* Main content area */}
+        <main className="overflow-auto">
+          <div className={`min-h-full p-4 md:p-8 vignette ${theme === 'light' ? 'bg-warm-gray-200 text-neutral-1100' : 'bg-warm-gray-1100 text-gray-200'}`}>
+            <div className="max-w-7xl mx-auto">
         {/* Header with Title and Social Links */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 pr-4">
-            <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-2 font-fraunces ${theme === 'light' ? 'text-neutral-1100' : 'text-warm-gray-200'}`}>Primitive color builder</h1>
-            <p className={`max-w-3xl text-sm md:text-base ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>Humans aren't computers — so why design colors like we are? Build harmonious color palettes rooted in how we perceive color.</p>
+            <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-2 font-fraunces ${theme === 'light' ? 'text-neutral-1100' : 'text-warm-gray-200'}`}>Not Yet Another Color Builder</h1>
+            <p className={`max-w-3xl text-sm md:text-base ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>A color builder with humans in mind.</p>
           </div>
 
           {/* Desktop Social Links - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 pt-2">
+            <LoveButton theme={theme} dividerClassName={`w-px h-5 ${theme === 'light' ? 'bg-neutral-500' : 'bg-gray-700'}`} />
+
             <button
               data-tally-open="1AKbD1"
               data-tally-layout="modal"
@@ -3467,6 +3508,8 @@ ${safelistPatterns}
               className="md:hidden overflow-hidden mb-4"
             >
               <div className={`cardboard-panel p-4 flex flex-col gap-3 ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-1100'}`}>
+                <LoveButton theme={theme} dividerClassName={`w-full h-px ${theme === 'light' ? 'bg-neutral-300' : 'bg-gray-700'}`} />
+
                 <button
                   data-tally-open="1AKbD1"
                   data-tally-layout="modal"
@@ -3507,24 +3550,38 @@ ${safelistPatterns}
 
         {/* Action Buttons - Icon Only */}
         <div className="flex flex-wrap justify-between items-center gap-2 md:gap-3 mb-4">
-          <p className={`text-sm ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} max-w-xl`}>
-            Pre-baked with settings — see {' '}
+          <p className={`text-sm ${theme === 'light' ? 'text-gray-900' : 'text-gray-400'} `}>
+            To learn more on how to use, {' '}
             <button
-              onClick={() => setShowHowToUse(true)}
+              onClick={() => setHelpPanelState(prev => ({ ...prev, isOpen: true }))}
               className={`underline cursor-pointer ${
                 theme === 'light'
                   ? 'text-gray-900 hover:text-gray-700'
                   : 'text-gray-300 hover:text-gray-500'
               }`}
             >
-              how to use
-            </button>.
+              check out this guide
+            </button>
+            . For the origin story, {' '}
+            <a
+              href="YOUR_URL_HERE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`underline cursor-pointer ${
+                theme === 'light'
+                  ? 'text-gray-900 hover:text-gray-700'
+                  : 'text-gray-300 hover:text-gray-500'
+              }`}
+            >
+              see how it started
+            </a>.
           </p>
           <div className="flex flex-wrap justify-end items-center gap-2 md:gap-3">
           <input
             type="file"
             accept=".json"
-            id="import-figma-tokens"
+            id="import-design-tokens"
+            aria-label="Import design tokens JSON file"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -3533,7 +3590,7 @@ ${safelistPatterns}
                 reader.onload = (event) => {
                   const content = event.target?.result;
                   if (content) {
-                    importFigmaTokens(content);
+                    importDesignTokens(content);
                   }
                 };
                 reader.readAsText(file);
@@ -3542,7 +3599,7 @@ ${safelistPatterns}
           />
           <Tooltip content="Import JSON file">
             <button
-              onClick={() => document.getElementById('import-figma-tokens')?.click()}
+              onClick={() => document.getElementById('import-design-tokens')?.click()}
               className={`cardboard-icon-button w-9 h-9 rounded-md flex items-center justify-center ${
                 theme === 'light'
                   ? 'bg-gray-100 text-neutral-900 border border-gray-300'
@@ -3597,7 +3654,7 @@ ${safelistPatterns}
                   }`}
                 >
                   <button
-                    onClick={exportToFigmaTokens}
+                    onClick={exportToDesignTokens}
                     className={`w-full px-4 py-2.5 text-left text-sm font-medium transition-colors ${
                       theme === 'light'
                         ? 'text-neutral-900 hover:bg-gray-100'
@@ -3608,7 +3665,7 @@ ${safelistPatterns}
                       <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                         file_download
                       </span>
-                      <span>Figma Tokens JSON</span>
+                      <span>Design Tokens JSON</span>
                     </div>
                   </button>
 
@@ -3690,14 +3747,14 @@ ${safelistPatterns}
             </h2>
             <button
               onClick={resetAllSettings}
-              className={`cardboard-small-button px-2 py-1 text-sm ${
+              className={`cardboard-small-button w-9 h-9 rounded-md flex items-center justify-center ${
                 theme === 'light'
                   ? 'text-gray-900 hover:text-neutral-900'
                   : 'text-gray-500 border border-gray-1000 hover:text-gray-300'
               }`}
               title="Reset all global settings to defaults"
             >
-              Reset all
+              <span className="material-symbols-rounded" style={{ fontSize: '20px' }}>replay</span>
             </button>
           </div>
 
@@ -3822,6 +3879,7 @@ ${safelistPatterns}
             {/* Swatches Count */}
             <div className="flex items-center gap-2">
               <label
+                htmlFor="global-swatch-count"
                 className={`font-jetbrains-mono text-sm font-medium cursor-ew-resize select-none ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}
                 onMouseDown={(e) => handleNumberDragStart(e, numSwatches, setNumSwatches, 4, 20, 1)}
                 title="Drag to change"
@@ -3829,6 +3887,7 @@ ${safelistPatterns}
                 Swatch count
               </label>
               <input
+                id="global-swatch-count"
                 type="number"
                 value={numSwatches}
                 onChange={(e) => setNumSwatches(Math.max(4, Math.min(20, parseInt(e.target.value) || 12)))}
@@ -3868,10 +3927,11 @@ ${safelistPatterns}
 
             {/* Swatch Background Color */}
             <div className="flex items-center gap-2">
-              <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+              <label htmlFor="swatch-bg-color" className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                 Swatch BG
               </label>
               <input
+                id="swatch-bg-color"
                 type="color"
                 value={swatchBackground}
                 onChange={(e) => setSwatchBackground(e.target.value)}
@@ -3890,6 +3950,7 @@ ${safelistPatterns}
                     setSwatchBackground(value);
                   }
                 }}
+                aria-label="Swatch background hex value"
                 className="cardboard-input w-20 px-2 py-1 rounded text-sm font-mono"
               />
             </div>
@@ -3945,6 +4006,7 @@ ${safelistPatterns}
                       disabled={!useCustomIncrement}
                       min="1"
                       max="1000"
+                      aria-label="Custom increment value"
                       className={`font-jetbrains-mono w-16 px-2 py-1 rounded-md text-sm focus:outline-none ${
                         theme === 'light'
                           ? 'bg-white border border-gray-300 text-neutral-1100 focus:border-cyan-600'
@@ -3964,18 +4026,6 @@ ${safelistPatterns}
                 </div>
               </div>
             </div>
-
-            {/* Beta Features */}
-            <Tooltip content="Enable experimental features like UI Preview">
-              <label className="flex items-center gap-1.5 cursor-pointer">
-                <Switch
-                  checked={betaFeaturesEnabled}
-                  onCheckedChange={(checked) => setBetaFeaturesEnabled(checked)}
-                  className="scale-75"
-                />
-                <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Beta features</span>
-              </label>
-            </Tooltip>
 
             {/* Advanced */}
             <label className="flex items-center gap-1.5 cursor-pointer">
@@ -4002,36 +4052,50 @@ ${safelistPatterns}
             }}
           >
             <div className="pt-6 space-y-6">
+              {/* Beta Features */}
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <Switch
+                  checked={betaFeaturesEnabled}
+                  onCheckedChange={(checked) => setBetaFeaturesEnabled(checked)}
+                  className="scale-75"
+                />
+                <Tooltip content="Enable experimental features like UI Preview">
+                  <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Beta features</span>
+                </Tooltip>
+              </label>
+
               {/* Color Space Toggle (beta) */}
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                    Color space (beta)
-                  </label>
-                  <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
-                    <SegmentedControl.Root
-                      value={globalGamut}
-                      onValueChange={(value) => {
-                        setGlobalGamut(value);
-                        trackEvent('Gamut Changed', { gamut: value });
-                      }}
-                      size="1"
-                    >
-                      <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
-                      <SegmentedControl.Item value="p3">
-                        Display P3
-                        {!supportsP3 && <span className="text-sm opacity-50 ml-1">(unsupported)</span>}
-                      </SegmentedControl.Item>
-                    </SegmentedControl.Root>
-                  </Tooltip>
-                </div>
-                {/* P3 Browser Warning */}
-                {globalGamut === 'p3' && !supportsP3 && (
-                  <div className={`px-3 py-2 rounded text-sm ${theme === 'light' ? 'bg-orange-100 text-orange-900' : 'bg-orange-900/30 text-orange-300'}`}>
-                    ⚠ Display P3 not supported in this browser. Colors shown in sRGB.
+              {betaFeaturesEnabled && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                      Color space (beta)
+                    </label>
+                    <Tooltip content="This beta feature is mainly useful for displaying and exporting P3 colors from external sources, rather than creating new P3 colors within the editor.">
+                      <SegmentedControl.Root
+                        value={globalGamut}
+                        onValueChange={(value) => {
+                          setGlobalGamut(value);
+                          trackEvent('Gamut Changed', { gamut: value });
+                        }}
+                        size="1"
+                      >
+                        <SegmentedControl.Item value="srgb">sRGB</SegmentedControl.Item>
+                        <SegmentedControl.Item value="p3">
+                          Display P3
+                          {!supportsP3 && <span className="text-sm opacity-50 ml-1">(unsupported)</span>}
+                        </SegmentedControl.Item>
+                      </SegmentedControl.Root>
+                    </Tooltip>
                   </div>
-                )}
-              </div>
+                  {/* P3 Browser Warning */}
+                  {globalGamut === 'p3' && !supportsP3 && (
+                    <div className={`px-3 py-2 rounded text-sm ${theme === 'light' ? 'bg-orange-100 text-orange-900' : 'bg-orange-900/30 text-orange-300'}`}>
+                      ⚠ Display P3 not supported in this browser. Colors shown in sRGB.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* P1, P2, L* Range - Horizontal Layout */}
               <div className="flex items-center gap-4">
@@ -4051,6 +4115,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P1 X"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <input
@@ -4060,6 +4125,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P1 Y"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                 </div>
@@ -4080,6 +4146,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P2 X"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <input
@@ -4089,6 +4156,7 @@ ${safelistPatterns}
                     min="0"
                     max="1"
                     step="0.01"
+                    aria-label="Bezier P2 Y"
                     className="cardboard-input w-16 px-2 py-1 rounded text-sm font-mono"
                   />
                   <button
@@ -4123,6 +4191,7 @@ ${safelistPatterns}
                     }}
                     min="0"
                     max="95"
+                    aria-label="Global L* range minimum"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
                     placeholder="Min"
                   />
@@ -4141,6 +4210,7 @@ ${safelistPatterns}
                     }}
                     min="5"
                     max="100"
+                    aria-label="Global L* range maximum"
                     className="cardboard-input w-14 px-2 py-1 rounded text-sm font-mono"
                     placeholder="Max"
                   />
@@ -4164,8 +4234,9 @@ ${safelistPatterns}
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
+                    <label htmlFor="global-lstar-max-slider" className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                     <input
+                      id="global-lstar-max-slider"
                       type="range"
                       min="5"
                       max="100"
@@ -4176,8 +4247,9 @@ ${safelistPatterns}
                     <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {globalLstarMax}</div>
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
+                    <label htmlFor="global-lstar-min-slider" className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                     <input
+                      id="global-lstar-min-slider"
                       type="range"
                       min="0"
                       max="95"
@@ -4346,10 +4418,11 @@ ${safelistPatterns}
                     {/* Left controls - wrap on all screens */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-sm font-medium tracking-narrow ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                        <label htmlFor={`color-label-${cs.id}`} className={`font-jetbrains-mono text-sm font-medium tracking-narrow ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                           Color label
                         </label>
                         <input
+                          id={`color-label-${cs.id}`}
                           type="text"
                           value={cs.name}
                           onChange={(e) => updateColorScaleName(cs.id, e.target.value)}
@@ -4368,10 +4441,13 @@ ${safelistPatterns}
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                          Key color
-                        </label>
+                        <Tooltip content="Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious (indicated by a key icon in the swatch).">
+                          <label htmlFor={`key-color-${cs.id}`} className={`font-jetbrains-mono text-sm font-medium cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                            Key color
+                          </label>
+                        </Tooltip>
                         <input
+                          id={`key-color-${cs.id}`}
                           type="color"
                           value={cs.hex}
                           onChange={(e) => updateColorScaleHex(cs.id, e.target.value)}
@@ -4385,6 +4461,7 @@ ${safelistPatterns}
                           type="text"
                           defaultValue={cs.hex}
                           key={cs.hex}
+                          aria-label={`${cs.name} key color hex value`}
                           onBlur={(e) => {
                             const value = e.target.value.trim();
                             if (/^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{3}$/.test(value)) {
@@ -4405,7 +4482,7 @@ ${safelistPatterns}
                           }`}
                         />
                       </div>
-                      <Tooltip content="Lock a key color if you need to use the exact HEX value in your scale (useful for brand colors).">
+                      <Tooltip content="Lock a key color if you need to use the exact HEX value in your scale (useful for brand colors). Locked key colors map to the closest scale position that best matches other swatches in the scale.">
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <Checkbox
                             checked={cs.lockKeyColor}
@@ -4417,7 +4494,7 @@ ${safelistPatterns}
                         </label>
                       </Tooltip>
                       {!cs.isSingleColor && (
-                        <Tooltip content="Include pure white and black swatches at the ends">
+                        <Tooltip content="Include pure white and black swatches at the ends. Best for neutral scales.">
                           <label className="flex items-center gap-1.5 cursor-pointer">
                             <Checkbox
                               checked={cs.includeAnchors}
@@ -4442,8 +4519,9 @@ ${safelistPatterns}
                       </Tooltip>
                       {!cs.isSingleColor && (
                         <div className="flex items-center gap-1">
-                          <label className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
+                          <label htmlFor={`swatch-count-${cs.id}`} className={`font-jetbrains-mono text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Swatches</label>
                           <input
+                            id={`swatch-count-${cs.id}`}
                             type="number"
                             value={cs.swatchCountOverride ?? numSwatches}
                             onChange={(e) => updateSwatchCountOverride(cs.id, e.target.value)}
@@ -4472,18 +4550,50 @@ ${safelistPatterns}
                           <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Advanced</span>
                         </label>
                       )}
-                      {colorScales.length > 1 && (
+                      {(() => {
+                        const csRgb = hexToRgb(cs.hex);
+                        const csHsl = csRgb ? rgbToHsl(csRgb.r, csRgb.g, csRgb.b) : null;
+                        if (!csHsl || csHsl.s === 0) return null;
+                        return true;
+                      })() && (
                         <div className="relative harmonize-dropdown-container">
-                          <button
-                            onClick={() => setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                            className={`cardboard-small-button px-2 py-1 rounded text-sm font-medium ${
-                              theme === 'light'
-                                ? 'bg-gray-300 text-gray-1000 border border-gray-300'
-                                : 'bg-gray-1100 text-white border border-gray-1000'
-                            }`}
-                          >
-                            Harmonize...
-                          </button>
+                          {(() => {
+                            const hasMultipleScales = colorScales.length > 1;
+                            const hasHarmonizableScales = hasMultipleScales && colorScales.some(otherScale => {
+                              if (otherScale.id === cs.id) return false;
+                              const rgb = hexToRgb(otherScale.hex);
+                              if (!rgb) return false;
+                              const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                              return hsl.s > 0;
+                            });
+                            const isDisabled = !hasMultipleScales || !hasHarmonizableScales;
+                            const btn = (
+                              <button
+                                onClick={() => !isDisabled && setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
+                                disabled={isDisabled}
+                                className={`cardboard-small-button px-2 py-1 rounded text-sm font-medium ${
+                                  isDisabled
+                                    ? 'opacity-40 cursor-not-allowed'
+                                    : ''
+                                } ${
+                                  theme === 'light'
+                                    ? 'bg-gray-300 text-gray-1000 border border-gray-300'
+                                    : 'bg-gray-1100 text-white border border-gray-1000'
+                                }`}
+                              >
+                                Harmonize with...
+                              </button>
+                            );
+                            return isDisabled ? (
+                              <Tooltip content={!hasMultipleScales ? "Add another scale to harmonize." : "Add one or more non-neutral colors to harmonize this scale."}>
+                                {btn}
+                              </Tooltip>
+                            ) : (
+                              <Tooltip content="Harmonize this scale with other key colors using color theory. The hue of the key color will remain the same while saturation and lightness are adjusted to match the selected color harmony.">
+                                {btn}
+                              </Tooltip>
+                            );
+                          })()}
                           <div
                             className={`overflow-hidden absolute left-0 z-50 ${
                               scaleIndex >= colorScales.length - 2 ? 'bottom-full' : 'top-full'
@@ -4521,7 +4631,13 @@ ${safelistPatterns}
                                   </button>
                                 )}
                                 {colorScales
-                                  .filter(otherScale => otherScale.id !== cs.id)
+                                  .filter(otherScale => {
+                                    if (otherScale.id === cs.id) return false;
+                                    const rgb = hexToRgb(otherScale.hex);
+                                    if (!rgb) return false;
+                                    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                                    return hsl.s > 0;
+                                  })
                                   .map(otherScale => {
                                     const colorTheoryMethods = [
                                       { id: 'direct', name: 'Direct Match', desc: 'Match saturation & lightness' },
@@ -4545,18 +4661,22 @@ ${safelistPatterns}
                                             <Tooltip
                                               key={method.id}
                                               content={method.desc}
+                                              side="right"
                                             >
                                               <button
                                                 onClick={() => {
                                                   harmonizeWithColor(cs.id, otherScale.id, method.id);
                                                   setHarmonizingScale(null);
                                                 }}
-                                                className={`px-2 py-1 rounded text-[11px] text-left transition-colors ${
-                                                  theme === 'light'
-                                                    ? 'hover:bg-gray-100 text-gray-700'
-                                                    : 'hover:bg-zinc-800 text-gray-400'
+                                                className={`px-2 py-1 rounded text-[11px] text-left transition-colors flex items-center gap-1.5 ${
+                                                  cs.harmonizeMethod === method.id && cs.harmonizeBaseId === otherScale.id
+                                                    ? (theme === 'light' ? 'bg-gray-200 text-gray-900 font-semibold' : 'bg-zinc-700 text-white font-semibold')
+                                                    : (theme === 'light' ? 'hover:bg-gray-100 text-gray-700' : 'hover:bg-zinc-800 text-gray-400')
                                                 }`}
                                               >
+                                                {cs.harmonizeMethod === method.id && cs.harmonizeBaseId === otherScale.id && (
+                                                  <span className="material-symbols-rounded text-[12px]">check</span>
+                                                )}
                                                 {method.name}
                                               </button>
                                             </Tooltip>
@@ -4578,7 +4698,7 @@ ${safelistPatterns}
                         <button
                           onClick={() => moveColorScale(cs.id, 'up')}
                           disabled={scaleIndex === 0}
-                          className={`cardboard-arrow-button p-1.5 ${
+                          className={`cardboard-arrow-button w-9 h-9 rounded-sm flex items-center justify-center ${
                             scaleIndex === 0
                               ? theme === 'light'
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
@@ -4594,7 +4714,7 @@ ${safelistPatterns}
                         <button
                           onClick={() => moveColorScale(cs.id, 'down')}
                           disabled={scaleIndex === colorScales.length - 1}
-                          className={`cardboard-arrow-button p-1.5 ${
+                          className={`cardboard-arrow-button w-9 h-9 rounded-sm flex items-center justify-center ${
                             scaleIndex === colorScales.length - 1
                               ? theme === 'light'
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
@@ -4610,7 +4730,7 @@ ${safelistPatterns}
                       </div>
                       <button
                         onClick={() => removeColorScale(cs.id)}
-                        className="p-1.5 hover:bg-red-900 rounded transition-all duration-150 ease-in-out text-red-400 active:bg-red-950 active:scale-95"
+                        className="w-9 h-9 rounded-sm flex items-center justify-center hover:bg-red-900 transition-all duration-150 ease-in-out text-red-400 active:bg-red-950 active:scale-95"
                         title="Remove scale"
                       >
                         <span className="material-symbols-rounded text-[16px]">delete</span>
@@ -4666,8 +4786,9 @@ ${safelistPatterns}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
+                            <label htmlFor={`lstar-max-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                             <input
+                              id={`lstar-max-${cs.id}`}
                               type="range"
                               min="5"
                               max="100"
@@ -4678,8 +4799,9 @@ ${safelistPatterns}
                             <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>L* {cs.lstarMax}</div>
                           </div>
                           <div>
-                            <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
+                            <label htmlFor={`lstar-min-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                             <input
+                              id={`lstar-min-${cs.id}`}
                               type="range"
                               min="0"
                               max="95"
@@ -4709,8 +4831,9 @@ ${safelistPatterns}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
+                          <label htmlFor={`saturation-max-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Max (light)</label>
                           <input
+                            id={`saturation-max-${cs.id}`}
                             type="range"
                             min="0"
                             max="100"
@@ -4721,8 +4844,9 @@ ${safelistPatterns}
                           <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.saturationMax}%</div>
                         </div>
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
+                          <label htmlFor={`saturation-min-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Min (dark)</label>
                           <input
+                            id={`saturation-min-${cs.id}`}
                             type="range"
                             min="0"
                             max="100"
@@ -4751,8 +4875,9 @@ ${safelistPatterns}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Light end</label>
+                          <label htmlFor={`hue-shift-light-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Light end</label>
                           <input
+                            id={`hue-shift-light-${cs.id}`}
                             type="range"
                             min="-180"
                             max="180"
@@ -4763,8 +4888,9 @@ ${safelistPatterns}
                           <div className={`text-sm font-mono mt-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>{cs.hueShiftLight}°</div>
                         </div>
                         <div>
-                          <label className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Dark end</label>
+                          <label htmlFor={`hue-shift-dark-${cs.id}`} className={`block text-sm font-medium mb-1 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-300'}`}>Dark end</label>
                           <input
+                            id={`hue-shift-dark-${cs.id}`}
                             type="range"
                             min="-180"
                             max="180"
@@ -4835,6 +4961,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P1 X`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                   <input
@@ -4844,6 +4971,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P1 Y`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                 </div>
@@ -4858,6 +4986,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P2 X`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                   <input
@@ -4867,6 +4996,7 @@ ${safelistPatterns}
                                     min="0"
                                     max="1"
                                     step="0.01"
+                                    aria-label={`${cs.name} custom bezier P2 Y`}
                                     className="cardboard-input w-full px-2 py-1 rounded text-sm font-mono"
                                   />
                                 </div>
@@ -4984,12 +5114,14 @@ ${safelistPatterns}
                                 }}
                               >
                                 {isKeyColor && (viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
-                                  <span
-                                    className={`material-symbols-rounded absolute bottom-1 left-1/2 -translate-x-1/2 text-[14px] ${textColor}`}
-                                    style={{ opacity: 0.5, fontVariationSettings: "'FILL' 1" }}
-                                  >
-                                    {cs.lockKeyColor ? 'lock' : 'key'}
-                                  </span>
+                                  <Tooltip content={cs.lockKeyColor ? "Locked key color — this swatch uses the exact HEX value of the key color." : "Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious."}>
+                                    <span
+                                      className={`material-symbols-rounded absolute bottom-1 left-1/2 -translate-x-1/2 text-[14px] ${textColor}`}
+                                      style={{ opacity: 0.5, fontVariationSettings: "'FILL' 1" }}
+                                    >
+                                      {cs.lockKeyColor ? 'lock' : 'key'}
+                                    </span>
+                                  </Tooltip>
                                 )}
                                 {isAnchor && (viewMode === 'default' || (viewMode === 'simple' && cs.expandedInMinimalView)) && (
                                   <span
@@ -5070,6 +5202,7 @@ ${safelistPatterns}
                                     type="text"
                                     defaultValue={v.hex.slice(1)}
                                     key={v.hex}
+                                    aria-label={`${cs.name} swatch ${v.step} hex value`}
                                     onBlur={(e) => {
                                       const value = e.target.value.trim();
                                       const hexValue = value.startsWith('#') ? value : `#${value}`;
@@ -5144,10 +5277,11 @@ ${safelistPatterns}
                   {/* Token Prefix and Key Color */}
                   <div className="mb-4 flex gap-4 items-start hidden">
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                      <label htmlFor={`token-prefix-${cs.id}`} className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
                         Token prefix
                       </label>
                       <input
+                        id={`token-prefix-${cs.id}`}
                         type="text"
                         value={cs.name}
                         onChange={(e) => updateColorScaleName(cs.id, e.target.value)}
@@ -5163,11 +5297,14 @@ ${safelistPatterns}
                       </div>
                     </div>
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                        Key color
-                      </label>
+                      <Tooltip content="Key color — the base reference color this scale is built from. The scale finds the closest lightness value to keep it harmonious (indicated by a key icon in the swatch).">
+                        <label htmlFor={`expanded-key-color-${cs.id}`} className={`block text-sm font-medium mb-2 cursor-default ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                          Key color
+                        </label>
+                      </Tooltip>
                       <div className="flex items-center gap-3">
                         <input
+                          id={`expanded-key-color-${cs.id}`}
                           type="color"
                           value={cs.hex}
                           onChange={(e) => updateColorScaleHex(cs.id, e.target.value)}
@@ -5180,7 +5317,8 @@ ${safelistPatterns}
                         <input
                           type="text"
                           defaultValue={cs.hex}
-                          key={cs.hex} // Force re-render when hex changes externally
+                          key={cs.hex}
+                          aria-label={`${cs.name} key color hex value`}
                           onBlur={(e) => {
                             const value = e.target.value.trim();
                             // Validate complete hex code (3 or 6 digits)
@@ -5203,14 +5341,38 @@ ${safelistPatterns}
                           }`}
                           placeholder="#000000"
                         />
-                        {colorScales.length > 1 && (
-                          <div className="relative harmonize-dropdown-container">
+                        {colorScales.length > 1 && (() => {
+                          const hasHarmonizableScales = colorScales.some(otherScale => {
+                            if (otherScale.id === cs.id) return false;
+                            const rgb = hexToRgb(otherScale.hex);
+                            if (!rgb) return false;
+                            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                            return hsl.s > 0;
+                          });
+                          const btn = (
                             <button
-                              onClick={() => setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
-                              className="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-800 rounded-md text-sm font-medium text-white transition-colors"
+                              onClick={() => hasHarmonizableScales && setHarmonizingScale(harmonizingScale === cs.id ? null : cs.id)}
+                              disabled={!hasHarmonizableScales}
+                              className={`px-3 py-1.5 bg-neutral-700 rounded-md text-sm font-medium text-white transition-colors ${
+                                !hasHarmonizableScales
+                                  ? 'opacity-40 cursor-not-allowed'
+                                  : 'hover:bg-neutral-800'
+                              }`}
                             >
                               Harmonize
                             </button>
+                          );
+                          return (
+                          <div className="relative harmonize-dropdown-container">
+                            {hasHarmonizableScales ? (
+                              <Tooltip content="Harmonize this scale with other key colors using color theory. The hue of the key color will remain the same while saturation and lightness are adjusted to match the selected color harmony.">
+                                {btn}
+                              </Tooltip>
+                            ) : (
+                              <Tooltip content="Add one or more non-neutral colors to harmonize this scale.">
+                                {btn}
+                              </Tooltip>
+                            )}
                             <div
                               className={`overflow-hidden absolute left-0 ${
                                 scaleIndex >= colorScales.length - 2 ? 'bottom-full' : 'top-full'
@@ -5230,17 +5392,26 @@ ${safelistPatterns}
                                 <div className={`text-sm font-medium mb-2 ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>Harmonize with:</div>
                                 <div className="space-y-1 max-h-[240px] overflow-y-auto">
                                   {colorScales
-                                    .filter(otherCs => otherCs.id !== cs.id)
+                                    .filter(otherCs => {
+                                      if (otherCs.id === cs.id) return false;
+                                      const rgb = hexToRgb(otherCs.hex);
+                                      if (!rgb) return false;
+                                      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                                      return hsl.s > 0;
+                                    })
                                     .map(otherCs => (
                                       <button
                                         key={otherCs.id}
                                         onClick={() => harmonizeWithColor(cs.id, otherCs.id)}
                                         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
-                                          theme === 'light'
-                                            ? 'hover:bg-gray-100'
-                                            : 'hover:bg-zinc-700'
+                                          cs.harmonizeBaseId === otherCs.id
+                                            ? (theme === 'light' ? 'bg-gray-200' : 'bg-zinc-600')
+                                            : (theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-zinc-700')
                                         }`}
                                       >
+                                        {cs.harmonizeBaseId === otherCs.id && (
+                                          <span className="material-symbols-rounded text-[14px]">check</span>
+                                        )}
                                         <div
                                           className={`w-4 h-4 rounded ${theme === 'light' ? 'border border-gray-400' : 'border border-zinc-600'}`}
                                           style={{ backgroundColor: otherCs.hex }}
@@ -5264,7 +5435,8 @@ ${safelistPatterns}
                               </div>
                             </div>
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -5456,10 +5628,11 @@ ${safelistPatterns}
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:self-end">
-                <label className={`font-jetbrains-mono block text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
-                  Base color
+                <label htmlFor="harmonize-base-scale" className={`font-jetbrains-mono block text-sm font-medium ${theme === 'light' ? 'text-neutral-900' : 'text-gray-500'}`}>
+                  Scale to harmonize with
                 </label>
                 <select
+                  id="harmonize-base-scale"
                   value={baseColorScaleId || ''}
                   onChange={(e) => setBaseColorScaleId(e.target.value ? parseInt(e.target.value) : null)}
                   className={`font-jetbrains-mono cardboard-input px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
@@ -5484,16 +5657,6 @@ ${safelistPatterns}
                 </select>
               </div>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:self-end">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Switch
-                    checked={useColorTheory}
-                    onCheckedChange={setUseColorTheory}
-                    size="1"
-                  />
-                  <span className={`font-jetbrains-mono text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
-                    {useColorTheory ? 'Color theory' : 'AI-based'}
-                  </span>
-                </label>
                 {selectedHarmoniousFamilies.size === 0 ? (
                   <Tooltip content="Select a color family to preview colors">
                     <Button
@@ -5633,18 +5796,6 @@ ${safelistPatterns}
                     >
                       Cancel
                     </Button>
-                    <Button
-                      onClick={generateHarmoniousColors}
-                      variant="soft"
-                      size="3"
-                      className={`cardboard-secondary ${
-                        theme === 'light'
-                          ? '!bg-warm-gray-400 !text-gray-1100'
-                          : '!bg-warm-gray-1000 !text-gray-200'
-                      }`}
-                    >
-                      Regenerate All
-                    </Button>
                     {selectedPreviews.size === 0 ? (
                       <Tooltip content="Select a color swatch to add a color scale to your palette">
                         <Button
@@ -5683,8 +5834,6 @@ ${safelistPatterns}
           </motion.div>
           )}
         </AnimatePresence>
-        </>
-        )}
       </div>
 
       {/* UI Preview Panel */}
@@ -5747,12 +5896,13 @@ ${safelistPatterns}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {Object.keys(semanticMappings).map(role => (
                   <div key={role}>
-                    <label className={`font-jetbrains-mono block text-xs font-medium mb-1 capitalize ${
+                    <label htmlFor={`semantic-${role}`} className={`font-jetbrains-mono block text-xs font-medium mb-1 capitalize ${
                       theme === 'light' ? 'text-neutral-900' : 'text-gray-500'
                     }`}>
                       {role}
                     </label>
                     <select
+                      id={`semantic-${role}`}
                       value={semanticMappings[role] ?? ''}
                       onChange={(e) => updateSemanticMapping(role, e.target.value === '' ? null : parseInt(e.target.value))}
                       className={`w-full px-2 py-1.5 rounded text-sm font-mono ${
@@ -5784,12 +5934,70 @@ ${safelistPatterns}
       </AnimatePresence>
 
       {/* Credit text */}
-      <div className="text-center py-8">
-        <p className={`text-sm ${theme === 'light' ? 'text-neutral-800' : 'text-gray-400'}`}>
-          Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan using Claude Code, React, and Radix.
-        </p>
+            <div className="text-center py-8">
+              <p className={`text-sm ${theme === 'light' ? 'text-neutral-900' : 'text-gray-400'}`}>
+                Made with <span className="material-symbols-rounded inline-flex items-center text-[12px] mx-0.5 text-rose-600/50" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> by Craig Mertan
+              </p>
+            </div>
+          </div>
+        </main>
+
+        {/* Resizable divider */}
+        {helpPanelState.isOpen && (
+          <ResizeDivider
+            position={helpPanelState.position}
+            currentSize={helpPanelState.position === 'bottom' ? helpPanelState.height : helpPanelState.width}
+            onResize={(newSize) => {
+              setHelpPanelState(prev => ({
+                ...prev,
+                [helpPanelState.position === 'bottom' ? 'height' : 'width']: newSize
+              }));
+              // Track resize event
+              trackEvent('Help Panel Resized', {
+                position: helpPanelState.position,
+                size: newSize
+              });
+            }}
+          />
+        )}
+
+        {/* Help panel content - wrapped to prevent expansion during close */}
+        {isPanelMounted && (
+          <div className="overflow-hidden">
+            <AnimatePresence
+              mode="wait"
+              onExitComplete={() => {
+                // Only unmount grid when actually closing, not when switching positions
+                if (!helpPanelState.isOpen) {
+                  setIsPanelMounted(false);
+                }
+              }}
+            >
+              {helpPanelState.isOpen && (
+                <motion.div
+                  key={`help-panel-${helpPanelState.position}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { duration: 0.1, ease: 'easeOut' } }}
+                  exit={{ transition: { duration: 0.1 } }}
+                  className="overflow-auto h-full"
+                >
+              <HelpPanelContent
+                theme={theme}
+                position={helpPanelState.position}
+                onTogglePosition={() => {
+                  setHelpPanelState(prev => ({
+                    ...prev,
+                    position: prev.position === 'bottom' ? 'side' : 'bottom'
+                  }));
+                }}
+                onClose={() => setHelpPanelState(prev => ({ ...prev, isOpen: false }))}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+          </div>
+        )}
       </div>
-    </div>
     </Theme>
   );
 }

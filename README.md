@@ -1,64 +1,74 @@
 # Primitive Color Builder
 
-An interactive bezier curve editor for creating perceptually uniform color scales using LAB color space.
+An interactive tool for building perceptually uniform color scales using LAB color space. Create harmonious, accessible palettes for design systems with precise control over lightness distribution via bezier curves.
 
 [App link](http://primitivecolorbuilder.netlify.app)
 
 ## Features
 
-- **Interactive Bezier Curve Editor**: Drag control points to adjust color distribution
-- **LAB Color Space**: Perceptually accurate colors matching Figma's approach
-- **Gray Scale & Color Scales**: Generate gray scales and custom color scales
-- **12 Swatches**: Each scale includes 12 steps from light to dark
-- **Custom Bezier per Scale**: Fine-tune individual color scales with custom curves
-- **Key Color Lock**: Lock brand colors to exact hex values while adjusting the rest
-- **Light/Dark Surface Preview**: Toggle backgrounds to preview scales on different surfaces
-- **Comparison View**: See all scales side-by-side
+### Scale Generation
+- **LAB Color Space** -- perceptually accurate color generation matching Figma's approach
+- **Bezier Curve Control** -- drag control points to shape how lightness is distributed across each scale
+- **Configurable Swatch Count** -- adjust the number of steps per scale (default 12)
+- **White/Black Anchors** -- optionally include pure white and black endpoints in your scale
+- **Display P3 Support** -- wide-gamut color output on supported browsers
+
+### Color Control
+- **Key Color Picker** -- choose a base color and generate a full scale from it
+- **Saturation Taper** -- fade saturation from vivid to muted across light and dark ends
+- **Hue Drift** -- shift hue subtly across the scale for more natural-looking ramps
+- **Per-Scale Bezier** -- override the global curve with a custom bezier for individual scales
+
+### Harmony & Relationships
+- **Harmonize** -- align a scale's saturation and lightness to a base scale using five methods: Direct Match, Complementary, Analogous, Triadic, and Monochromatic
+- **Color Families** -- quickly add common sentiment scales (success, warning, danger, etc.)
+- **Luminance View** -- desaturate all scales to compare lightness balance at a glance
+
+### Accessibility
+- **WCAG AA Contrast** -- check contrast ratios against custom foreground/background colors
+- **APCA Contrast** -- newer perceptual contrast method, especially useful for UI text
+- **Surface Preview** -- switch swatch background color to simulate light and dark surfaces
+
+### Export & Sharing
+- **W3C Design Tokens (DTCG)** -- export scales as standards-compliant JSON for use in design systems and build pipelines
+- **Import Tokens** -- load W3C DTCG or legacy Figma Tokens JSON to restore or share work
+- **Shareable URLs** -- generate a link that encodes all settings for sharing with teammates
+
+### UI
+- **Light & Dark Theme**
+- **Default & Simple View Modes**
+- **Lightness-Based or Sequential Numbering** -- token names reflect LAB lightness values or use incremental numbering
+- **Built-in How to Use Guide** -- resizable help panel with usage instructions
 
 ## Getting Started
 
-### Installation
+### Prerequisites
+
+- Node.js 18+
+
+### Install & Run
 
 ```bash
 npm install
-```
-
-### Development
-
-```bash
 npm run dev
 ```
 
-### Build
+### Build for Production
 
 ```bash
 npm run build
-```
-
-### Preview
-
-```bash
 npm run preview
 ```
 
-## Usage
+## Tech Stack
 
-1. **Adjust Global Curve**: Drag control points on the main bezier canvas to affect all scales
-2. **Add Color Scales**: Click "+ Add Color Scale" to create new color scales
-3. **Pick Key Color**: Use the color picker to choose your base color
-4. **Custom Bezier**: Enable "Use Custom Bezier Curve" for per-scale fine-tuning
-5. **Lock Key Color**: Enable "Lock Key Color Hex" to preserve exact brand color hex codes
-6. **Toggle Surfaces**: Switch between light and dark backgrounds to preview contrast
-7. **Compare Scales**: View all scales together in the comparison section
-
-## Technical Details
-
-- Built with React + Vite
-- Tailwind CSS for styling
+- React 18 + Vite 5
+- Tailwind CSS
+- Radix UI Themes
+- Framer Motion
 - LAB color space conversion for perceptual uniformity
-- Cubic bezier curves for precise control over color distribution
-- 12-step scales ranging from L* 100 (white) to L* 0 (black)
+- Cubic bezier curves for lightness distribution control
 
 ## License
 
-MIT
+CC0 1.0 Universal
